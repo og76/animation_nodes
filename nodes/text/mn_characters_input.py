@@ -13,6 +13,7 @@ class mn_CharactersNode(Node, AnimationNode):
         self.outputs.new("mn_StringSocket", "Upper Case")
         self.outputs.new("mn_StringSocket", "Digits")
         self.outputs.new("mn_StringSocket", "Special")
+        self.outputs.new("mn_StringSocket", "Line Break")
         self.outputs.new("mn_StringSocket", "All")
         allowCompiling()
         
@@ -23,6 +24,7 @@ class mn_CharactersNode(Node, AnimationNode):
                 "Upper Case" : "upper",
                 "Digits" : "digits",
                 "Special" : "special",
+                "Line Break" : "lineBreak",
                 "All" : "all"}
         
     def execute(self):
@@ -30,5 +32,7 @@ class mn_CharactersNode(Node, AnimationNode):
         upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         digits = "0123456789"
         special = "!$%&/()=?*+#'-_.:,;" + '"'
-        all = lower + upper + digits + special
-        return lower, upper, digits, special, all
+        lineBreak = '''
+'''
+        all = lower + upper + digits + special + lineBreak
+        return lower, upper, digits, special, lineBreak, all

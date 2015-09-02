@@ -21,6 +21,7 @@ class mn_JoinTextList(Node, AnimationNode):
     def init(self, context):
         forbidCompiling()
         self.inputs.new("mn_StringListSocket", "List")
+        self.inputs.new("mn_StringSocket", "Separator")
         self.inputs.new("mn_IntegerSocket", "Start").number = 0
         self.inputs.new("mn_IntegerSocket", "End").number = 5
         self.outputs.new("mn_StringSocket", "Joined Text")#or just Text?
@@ -38,13 +39,14 @@ class mn_JoinTextList(Node, AnimationNode):
         
     def getInputSocketNames(self):
         return {"List" : "list",
+                "Separator" : "separator",
                 "Start" : "start",
                 "End" : "end"}
                 
     def getOutputSocketNames(self):
         return {"Joined Text" : "text"}#or just Text?
         
-    def execute(self, list, start, end):
+    def execute(self, list, separator, start, end):
         listLength = len(list)
         
         if self.autoEnd: end = listLength
@@ -53,7 +55,7 @@ class mn_JoinTextList(Node, AnimationNode):
         start = min(max(minIndex, start), listLength)
         end = min(max(minIndex, end), listLength)
         
-        text = "".join(list[start:end])
+        text = separator.join(list[start:end])
         
         return text
     
