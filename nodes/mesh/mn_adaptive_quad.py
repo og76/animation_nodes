@@ -2,11 +2,9 @@ import bpy, time, bmesh
 from bpy.types import Node
 from ... mn_node_base import AnimationNode
 from ... mn_execution import nodePropertyChanged, allowCompiling, forbidCompiling
-#from ... data_structures.mesh import *
-#from ... mn_cache import *
 from mathutils import Vector, Matrix
 
-    #Animation Nodes Adaptive Quad, // ver 0.1
+    #Animation Nodes Adaptive Quad, // ver 0.2
     #deforms a mesh according to deformed quad 
     #by o.g. 19.08.2015
     #on the idea of JoseConseco, based on Adaptive Duplifaces by Alessandro Zomparelli 
@@ -14,69 +12,82 @@ from mathutils import Vector, Matrix
 class mn_AdaptiveQuad(Node, AnimationNode): 
     bl_idname = "mn_AdaptiveQuad"
     bl_label = "Adaptive Quad"
-    #outputUseParameterName = "useOutput"
     
-    NormalDeform = bpy.props.BoolProperty(name = "Normal Deform", default = True, description = "Deform Z using vertex normals. If off, use straight Z, on polygon normal")
-    UseBbox =  bpy.props.BoolProperty(name = "Use Bound Box", default = True, description = "Use min max. If off, use default 2x2 plane base as reference")
+    def checkedPropertiesChanged(self, context):
+        self.updateSocketVisibility()
+        nodeTreeChanged()
+    
+    normalDeform = bpy.props.BoolProperty(name = "Normal Deform", default = True, description = "Deform Z using vertex normals. If off, use straight Z, on polygon normal")
+    useBbox =  bpy.props.BoolProperty(name = "Use Bound Box", default = True, description = "Use min max. If off, use default 2x2 plane base as reference", update = checkedPropertiesChanged)
     
     def init(self, context):
         forbidCompiling()
         self.inputs.new("mn_PolygonSocket", "Polygon")
         self.inputs.new("mn_MatrixSocket", "Matrix")
         self.inputs.new("mn_VectorListSocket", "Vertex Locations")
+        self.inputs.new("mn_FloatSocket", "Base Side").number = 2.0
         self.inputs.new("mn_FloatSocket", "Z Factor").number = 1.0
         self.outputs.new("mn_VectorListSocket", "Deformed Vertex Locations")
+        self.updateSocketVisibility()
         allowCompiling()
         
     def draw_buttons(self, context, layout):
-        layout.prop(self, "NormalDeform")
-        layout.prop(self, "UseBbox")
+        layout.prop(self, "normalDeform")
+        layout.prop(self, "useBbox")
         
     def draw_buttons_ext(self, context, layout):
-        layout.operator("wm.call_menu", text = "Info / Help", icon = "INFO").name = "mn.show_help_adaptive_quad"
+        layout.prop(self, "show_options")
+        layout.operator("wm.call_menu", text = "Info / update! v0.2",  icon = "INFO").name = "mn.show_help_adaptive_quad"
+
+    def updateSocketVisibility(self):
+        self.inputs["Base Side"].hide = self.useBbox
+        self.inputs["Base Side"].active = not (self.useBbox)
         
     def getInputSocketNames(self):
         return {"Polygon" : "polygon",
                 "Matrix" : "matrix",
                 "Vertex Locations" : "vertexLocations",
+                "Base Side" : "baseSide",
                 "Z Factor" : "zFactor"}
     def getOutputSocketNames(self):
         return {"Deformed Vertex Locations" : "deformedVertexLocations"}
 
-    def execute(self, polygon, matrix, vertexLocations, zFactor):
+    def execute(self, polygon, matrix, vertexLocations, zFactor, baseSide):
         
         VL = vertexLocations
         QV = polygon.vertices
         
-        minX = min(v[0] for v in VL) if self.UseBbox and len(VL)>0 else -1.0
-        maxX = max(v[0] for v in VL) if self.UseBbox and len(VL)>0 else 1.0
-        minY = min(v[1] for v in VL) if self.UseBbox and len(VL)>0 else -1.0
-        maxY = max(v[1] for v in VL) if self.UseBbox and len(VL)>0 else 1.0
-        minZ = min(v[2] for v in VL) if self.UseBbox and len(VL)>0 else -1.0
-        maxZ = max(v[2] for v in VL) if self.UseBbox and len(VL)>0 else 1.0
+        bs = baseSide / 2
+        minX = min(v[0] for v in VL) if self.useBbox and len(VL)>0 else -bs 
+        maxX = max(v[0] for v in VL) if self.useBbox and len(VL)>0 else bs 
+        minY = min(v[1] for v in VL) if self.useBbox and len(VL)>0 else -bs 
+        maxY = max(v[1] for v in VL) if self.useBbox and len(VL)>0 else bs 
+        minZ = min(v[2] for v in VL) if self.useBbox and len(VL)>0 else -bs 
+        maxZ = max(v[2] for v in VL) if self.useBbox and len(VL)>0 else bs 
         
         #quad
         if len(QV) > 2:
             q0 = QV[0].location
             q1 = QV[1].location
             q2 = QV[2].location
-            q3 = QV[-1].location  #escaping non quads, take last
+            q3 = QV[-1].location  #escaping non quads, take last, + tris 2=3
             n0 = QV[0].normal
             n1 = QV[1].normal
             n2 = QV[2].normal
-            n3 = QV[-1].normal  #escaping non quads, take last
+            n3 = QV[-1].normal  #escaping non quads, take last, + tris 2=3
             np = polygon.normal
         else:   
-            #like default 2x2 plane
-            q0 = Vector((-1, -1, 0))
-            q1 = Vector(( 1, -1, 0))
-            q2 = Vector(( 1,  1, 0))
-            q3 = Vector((-1,  1, 0))
-            n0 = Vector((-1, -1, 1))
-            n1 = Vector(( 1, -1, 1))
-            n2 = Vector(( 1,  1, 1))
-            n3 = Vector((-1,  1, 1))
-            np = Vector(( 0,  0, 1))
+            #default 2, to give like default 2x2 plane (for -1, 1)
+            #bs = baseSide / 2
+            q0 = Vector((-bs, -bs, 0))
+            q1 = Vector(( bs, -bs, 0))
+            q2 = Vector(( bs,  bs, 0))
+            q3 = Vector((-bs,  bs, 0))
+            n0 = Vector((-bs, -bs, bs))
+            n1 = Vector(( bs, -bs, bs))
+            n2 = Vector(( bs,  bs, bs))
+            n3 = Vector((-bs,  bs, bs))
+            np = Vector(( 0,  0, bs))
 
         DeformedLocations = []
         for v in VL:
@@ -89,7 +100,7 @@ class mn_AdaptiveQuad(Node, AnimationNode):
             q32 = q3 + (q2 - q3)*rx
             qdef= q01+ (q32-q01)*ry
             #normal verts or normal poly
-            if self.NormalDeform:
+            if self.normalDeform:
                 n01 = n0 + (n1 - n0)*rx
                 n32 = n3 + (n2 - n3)*rx
                 ndef= n01+ (n32-n01)*ry
@@ -105,7 +116,7 @@ class mn_AdaptiveQuad(Node, AnimationNode):
 
 class ShowHelp(bpy.types.Menu):
     bl_idname = "mn.show_help_adaptive_quad"
-    bl_label = "Adaptive Quad node | Blender - Animation Nodes"
+    bl_label = "Adaptive Quad node v0.2 | Blender - Animation Nodes"
     bl_icon = "FORCE_TURBULENCE"
     
     helpText = bpy.props.StringProperty(default = "help here")
@@ -116,7 +127,7 @@ class ShowHelp(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator_context = "INVOKE_DEFAULT"
-        layout.label('''Help, notes.''', icon = "INFO")
+        layout.label('''Help, notes. v 0.2''', icon = "INFO")
         row = layout.row(align = True)
         
         col = row.column(align = True)
@@ -131,7 +142,7 @@ class ShowHelp(bpy.types.Menu):
             if li:
                 col.label(text=li)
             
-        layout.label("o.g. 08.2015", icon = "INFO")
+        layout.label("o.g. 08.2015, update 0.2 09.2015", icon = "INFO")
         
     helpText ='''
 Purpose:
@@ -145,11 +156,14 @@ Purpose:
     more than 1 mesh to distribute and may use adaptives on top of adaptives.(see forum)
     
 Inputs:
-    [ Polygon ] :  The target polygon, that will deform the instance
-    [ Matrix  ] :  The target polygon object matrix, to get the world pos 
+    [ Polygon ]  :  The target polygon, that will deform the instance
+    [ Matrix  ]  :  The target polygon object matrix, to get the world pos 
                   of the object. Other sources may be used (just a convenience)
     [ Vertex Locations ] :  Vertices of the mesh to be instanced and stretched 
-    [ ZFactor ] :  An extra z factor. Will multiply with original z of the mesh (instance)
+    [ ZFactor ]  :  An extra z factor. Will multiply with original z of the mesh (instance)
+new v0.2!
+    [ Base Side ]:  The side of base square, if not using Bbox. This is centered on obj center.
+                  Default is 2, like the default plane, going from -1 to 1 as coordinates.
 Outputs:
     [ Deformed Vertex Locations ] :  The vertex locations deformed positions
 
@@ -162,13 +176,25 @@ Options:
     [ Use Bound Box ] : the reference source for deformation
             [v] On  =  basis of the mesh is the bounding box (xyz min/max). This rectangle 
                        will be morphed into the target poly. Z +/- to the origin of the mesh obj
-                       The mesh will be "enclosed" in the polygon area 
-            [.] Off =  basis of the mesh is a 2x2 square like the B default plane (-1 to 1) 
+                       The mesh will be "enclosed" in the polygon area.
+            [.] Off =  basis of the mesh is a square centered on obj center, side = Base Side. 
+                       Default 2 gives a 2x2 square like the B default plane (-1 to 1) 
                        with the origin 0. This square will be morphed into the target polygon. 
                        Useful when you want the mesh to go outside the polygon base.
 '''
     noteText ='''
 notes:
+    
+    ! ..............................................................................
+#    Updated on v 0.2:
+#        + corrected mesh orientation for Non Bbox, to match X to vertex 0 ->1 of polygon
+#            the order of verts was wrong before, also inconsistent with Bbox orientation.
+#        + added Base Side socket to allow other square sizes for Non Bbox (same center).
+#            default 2 gives the old behavior, like the blender 2x2 Plane (-1 to 1)
+#        + Show options (in prop panel) can hide the checkboxes to make node smaller
+#        + some internal cleaning
+    ! ..............................................................................
+    
     also to be found on:
         http://blenderartists.org/forum
         Addon-Animation-Nodes , page 68, post 1350
