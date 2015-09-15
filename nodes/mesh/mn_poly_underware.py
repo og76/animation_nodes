@@ -14,7 +14,7 @@ class mn_PolyUnderware(Node, AnimationNode):
     bl_label = "Poly Underware"
     #outputUseParameterName = "useOutput"
     
-#    NormalDeform = bpy.props.BoolProperty(name = "Normal Deform", default = True, description = "Deform Z using vertex normals. If off, normal is an offset, on polygon normal")
+    NormalDeform = bpy.props.BoolProperty(name = "Normal Deform", default = True, description = "Deform Z using vertex normals. If off, normal is an offset, on polygon normal")
     UseCentral =  bpy.props.BoolProperty(name = "Use Central Poly", default = True, description = "Create central poly, at the stripes intersection. If off, there will be a hole")
     
     def init(self, context):
@@ -23,13 +23,13 @@ class mn_PolyUnderware(Node, AnimationNode):
 #        self.inputs.new("mn_IntSocket", "Subdivision").integer = 1
         self.inputs.new("mn_FloatSocket", "Width Factor").number = 0.5
         self.inputs.new("mn_FloatSocket", "Smooth Factor").number = 0.0
-#        self.inputs.new("mn_FloatSocket", "Offset").number = 0.0
+        self.inputs.new("mn_FloatSocket", "Offset").number = 0.0
         self.outputs.new("mn_VectorListSocket", "Vertex Locations")
         self.outputs.new("mn_PolygonIndicesListSocket", "Polygons Indices")
         allowCompiling()
         
     def draw_buttons(self, context, layout):
-#        layout.prop(self, "NormalDeform")
+        layout.prop(self, "NormalDeform")
         layout.prop(self, "UseCentral")
         
     def draw_buttons_ext(self, context, layout):
@@ -38,13 +38,14 @@ class mn_PolyUnderware(Node, AnimationNode):
     def getInputSocketNames(self):
         return {"Polygon" : "polygon",
                 "Width Factor" : "widthFactor",
-                "Smooth Factor" : "smoothFactor"}
+                "Smooth Factor" : "smoothFactor",
+                "Offset" : "offset"}
                 
     def getOutputSocketNames(self):
         return {"Vertex Locations" : "vertexLocations",
                 "Polygons Indices" : "polygonsIndices"}
 
-    def execute(self, polygon, widthFactor, smoothFactor):
+    def execute(self, polygon, widthFactor, smoothFactor, offset):
         
         vertexLocations = []
         polygonsIndices = []
@@ -52,14 +53,14 @@ class mn_PolyUnderware(Node, AnimationNode):
             #factors relation
         wFactor = min(max(widthFactor, 0), 1)   #widthFactor clamp 
         if (1 - wFactor) == 0: 
-            sFactor = min(max(smoothFactor, -1), 1) 
+            sFactor = min(max(smoothFactor, 0), 1) 
             lerpfac = 1-sFactor      #corner filled / full face
         else: 
             sFactor = min(max(smoothFactor, - wFactor / (1 - wFactor)), 1)
             lerpfac = wFactor + (1 - wFactor) * sFactor 
               #smoothFactor clamp on wFactor
         
-        Center = polygon.center       #find center with bisectors or so, for concave poly
+        Center = polygon.center.lerp(polygon.center + polygon.normal, offset) if self.NormalDeform else polygon.center     #find center with bisectors or so, for concave poly
         polyVerts = polygon.vertices
 
         stripesPoly = []
