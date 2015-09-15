@@ -32,7 +32,6 @@ class mn_CharactersNode(Node, AnimationNode):
         upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         digits = "0123456789"
         special = "!$%&/()=?*+#'-_.:,;" + '"'
-        lineBreak = '''
-'''
+        lineBreak = "\n"
         all = lower + upper + digits + special + lineBreak
         return lower, upper, digits, special, lineBreak, all
