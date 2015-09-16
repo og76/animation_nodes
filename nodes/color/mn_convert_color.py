@@ -6,7 +6,7 @@ from ... mn_execution import nodePropertyChanged, allowCompiling, forbidCompilin
 sourceTypeItems = [
     ("RGB", "RGB", "Red, Green, Blue"),            #"Red, Green, Blue"
     ("HSV", "HSV", "Hue, Saturation, Value"),      #Hue, Saturation, Value"
-    ("HLS", "HLS", "Hue, Lightness, Saturation"),  #"Hue, Lightness, Saturation"
+    ("HSL", "HSL", "Hue, Saturation, Lightness"),  #"Hue, Lightness, Saturation"
     ("YIQ", "YIQ", "Luma, Chrominance")]           #"Luma, Chrominance"
 
 class mn_ConvertColor(Node, AnimationNode):
@@ -25,17 +25,20 @@ class mn_ConvertColor(Node, AnimationNode):
         self.inputs.new("mn_FloatSocket", "Red")
         self.inputs.new("mn_FloatSocket", "Green")
         self.inputs.new("mn_FloatSocket", "Blue")
+        
         self.inputs.new("mn_FloatSocket", "Hue")
         self.inputs.new("mn_FloatSocket", "Saturation")
         self.inputs.new("mn_FloatSocket", "Value")
         #same H, S
-        self.inputs.new("mn_FloatSocket", "Luminance")
+        self.inputs.new("mn_FloatSocket", "Lightness")
+        
         self.inputs.new("mn_FloatSocket", "Y Luma")
         self.inputs.new("mn_FloatSocket", "I In phase")
         self.inputs.new("mn_FloatSocket", "Q Quadrature")
 
         self.inputs.new("mn_FloatSocket", "Alpha").number = 1
         self.updateHideStatus()
+        
         self.outputs.new("mn_ColorSocket", "Color")
         allowCompiling()
 
@@ -49,7 +52,7 @@ class mn_ConvertColor(Node, AnimationNode):
                 "Hue" : "hue",
                 "Saturation" : "saturation",
                 "Value" : "value",
-                "Luminance" : "luminance",
+                "Lightness" : "lightness",
                 "Y Luma" : "y",
                 "I In phase" : "i",
                 "Q Quadrature" : "q",
@@ -57,10 +60,10 @@ class mn_ConvertColor(Node, AnimationNode):
     def getOutputSocketNames(self):
         return {"Color" : "color"}
 
-    def execute(self, red, green, blue, hue, saturation, value, luminance, y, i, q, alpha):
+    def execute(self, red, green, blue, hue, saturation, value, lightness, y, i, q, alpha):
         if self.sourceType == "RGB":    C= [red, green, blue]
         elif self.sourceType == "HSV":  C= colorsys.hsv_to_rgb(hue, saturation, value)
-        elif self.sourceType == "HLS":  C= colorsys.hls_to_rgb(hue, luminance, saturation)
+        elif self.sourceType == "HSL":  C= colorsys.hls_to_rgb(hue, lightness, saturation)
         elif self.sourceType == "YIQ":  C= colorsys.yiq_to_rgb(y, i, q)
             
         return [C[0], C[1], C[2], alpha]
@@ -74,7 +77,7 @@ class mn_ConvertColor(Node, AnimationNode):
         self.inputs["Saturation"].hide = True
         self.inputs["Value"].hide = True
         
-        self.inputs["Luminance"].hide = True
+        self.inputs["Lightness"].hide = True
         
         self.inputs["Y Luma"].hide = True
         self.inputs["I In phase"].hide = True
@@ -88,10 +91,10 @@ class mn_ConvertColor(Node, AnimationNode):
             self.inputs["Hue"].hide = False
             self.inputs["Saturation"].hide = False
             self.inputs["Value"].hide = False
-        elif self.sourceType == "HLS":
+        elif self.sourceType == "HSL":
             self.inputs["Hue"].hide = False
-            self.inputs["Luminance"].hide = False
             self.inputs["Saturation"].hide = False
+            self.inputs["Lightness"].hide = False
         elif self.sourceType == "YIQ":
             self.inputs["Y Luma"].hide = False
             self.inputs["I In phase"].hide = False
