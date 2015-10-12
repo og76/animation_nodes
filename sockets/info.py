@@ -20,7 +20,11 @@ listChains = [
     ["an_PolygonSocket", "an_PolygonListSocket"],
     ["an_VertexSocket", "an_VertexListSocket"],
     ["an_GenericSocket", "an_GenericListSocket"],
-    ["an_FCurveSocket", "an_FCurveListSocket"] ]
+    ["an_FCurveSocket", "an_FCurveListSocket"],
+    ["an_ObjectGroupSocket", "an_ObjectGroupListSocket"],
+    ["an_EulerSocket", "an_EulerListSocket"],
+    ["an_TextBlockSocket", "an_TextBlockListSocket"],
+    ["an_SceneSocket", "an_SceneListSocket"] ]
 
 limitedListTypes = {
     "an_IntegerListSocket" : ("an_EdgeIndicesSocket", "an_PolygonIndicesSocket") }

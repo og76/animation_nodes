@@ -38,6 +38,48 @@ class LinkCorrection:
     # subclasses need a check and insert function
     pass
 
+class ConvertNumberToEuler(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType in ["Integer", "Float"] and target.dataType == "Euler"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        insertLinkedNode(nodeTree, "an_CombineEulerNode", origin, target)
+
+class ConvertVectorToEuler(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType == "Vector" and target.dataType == "Euler"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        node = insertLinkedNode(nodeTree, "an_ConvertVectorAndEulerNode", origin, target)
+        node.conversionType = "VECTOR_TO_EULER"
+        node.inputs[0].linkWith(origin)
+        node.outputs[0].linkWith(target)
+
+class ConvertEulerToVector(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType == "Euler" and target.dataType == "Vector"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        node = insertLinkedNode(nodeTree, "an_ConvertVectorAndEulerNode", origin, target)
+        node.conversionType = "EULER_TO_VECTOR"
+        node.inputs[0].linkWith(origin)
+        node.outputs[0].linkWith(target)
+
+class ConvertEulerToQuaternion(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType == "Euler" and target.dataType == "Quaternion"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        node = insertLinkedNode(nodeTree, "an_ConvertQuaternionAndEulerNode", origin, target)
+        node.conversionType = "EULER_TO_QUATERNION"
+        node.inputs[0].linkWith(origin)
+        node.outputs[0].linkWith(target)
+
+class ConvertQuaternionToEuler(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType == "Quaternion" and target.dataType == "Euler"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        node = insertLinkedNode(nodeTree, "an_ConvertQuaternionAndEulerNode", origin, target)
+        node.conversionType = "QUATERNION_TO_EULER"
+        node.inputs[0].linkWith(origin)
+        node.outputs[0].linkWith(target)
+
 class ConvertParticleSystemToParticle(LinkCorrection):
     def check(self, origin, target):
         return origin.dataType == "Particle System" and target.dataType == "Particle"
@@ -110,7 +152,7 @@ class ConvertSeparatedMeshDataToBMesh(LinkCorrection):
         nodeTree.links.new(toMesh.inputs[0], toMeshData.outputs[0])
         nodeTree.links.new(toMesh.outputs[0], target)
 
-class ConvertToVector(LinkCorrection):
+class ConvertNumberToVector(LinkCorrection):
     def check(self, origin, target):
         return origin.dataType in ["Integer", "Float"] and target.dataType == "Vector"
     def insert(self, nodeTree, origin, target, dataOrigin):
@@ -196,6 +238,11 @@ def getSocketCenter(socket1, socket2):
     return (socket1.node.viewLocation + socket2.node.viewLocation) / 2
 
 linkCorrectors = [
+    ConvertNumberToEuler(),
+    ConvertVectorToEuler(),
+    ConvertEulerToVector(),
+    ConvertEulerToQuaternion(),
+    ConvertQuaternionToEuler(),
     ConvertParticleSystemToParticle(),
     ConvertParticleSystemToParticles(),
     ConvertListToElement(),
@@ -206,7 +253,7 @@ linkCorrectors = [
     ConvertPolygonListIndicesToEdgeListIndices(),
     ConvertIntegerListToPolygonIndices(),
     ConvertSeparatedMeshDataToBMesh(),
-    ConvertToVector(),
+    ConvertNumberToVector(),
     ConvertVectorToNumber(),
     ConvertTextBlockToString(),
     ConvertVectorToMatrix(),
