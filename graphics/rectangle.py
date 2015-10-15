@@ -5,7 +5,7 @@ class Rectangle:
     def __init__(self, x1 = 0, y1 = 0, x2 = 0, y2 = 0):
         self.resetPosition(x1, y1, x2, y2)
         self.color = (0.8, 0.8, 0.8, 1.0)
-        self.borderColor = (0.1, 0.1, 0.1, 1.0)
+        self.borderColor = (0.1, 0.1, 0.1, 0.5)
         self.borderThickness = 0
 
     def resetPosition(self, x1 = 0, y1 = 0, x2 = 0, y2 = 0):
