@@ -1,9 +1,9 @@
 import bpy
 from ... base_types.node import AnimationNode
 
-class FloatToStringNode(bpy.types.Node, AnimationNode):
-    bl_idname = "an_FloatToStringNode"
-    bl_label = "Float to Text"
+class FloatToString2Node(bpy.types.Node, AnimationNode):
+    bl_idname = "an_FloatToStringNode2"
+    bl_label = "Float to Text2"
 
     def create(self):
         self.inputs.new("an_FloatSocket", "Number", "number")
