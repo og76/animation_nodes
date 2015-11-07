@@ -3,7 +3,7 @@ from bpy.props import *
 from ... events import executionCodeChanged
 from ... base_types.node import AnimationNode
 
-planeTypeItems = [  ("POINT_AND_NORMAL", "Plane: Point/ Normal", ""),
+planeTypeItems = [  ("POINT_AND_NORMAL", "Plane: Point/Normal", ""),
                     ("MATRIX_XY", "Plane: Matrix XY", "") ]
 
 class ProjectPointOnPlaneNode(bpy.types.Node, AnimationNode):
@@ -22,12 +22,12 @@ class ProjectPointOnPlaneNode(bpy.types.Node, AnimationNode):
         self.inputs.new("an_VectorSocket", "Point", "point")
         
         self.inputs.new("an_VectorSocket", "Plane Point", "planePoint")
-        self.inputs.new("an_VectorSocket", "Plane Normal", "planeNormal")
+        self.inputs.new("an_VectorSocket", "Plane Normal", "planeNormal").value = (0, 0, 1)
         self.inputs.new("an_MatrixSocket", "Matrix XY Plane", "matrix")
         self.updateHideStatus()
         
         self.outputs.new("an_VectorSocket", "Projection", "projection")
-        self.outputs.new("an_BooleanSocket", "Distance", "distance")
+        self.outputs.new("an_FloatSocket", "Distance", "distance")
         
     def draw(self, layout):
         layout.prop(self, "planeType", text = "")
@@ -36,18 +36,12 @@ class ProjectPointOnPlaneNode(bpy.types.Node, AnimationNode):
         isLinked = self.getLinkedOutputsDict()
         
         yield "plane_co, plane_no = " + getPlane(self.planeType)
-        yield "projection = mathutils.geometry.intersect_line_plane(point, point + plane_no, plane_co, plane_no, False)"
-        if isLiked["distance"]: yield "sign = -1 if (point - projection).dot(normal) < 0 else 1
-distance = (projection - point)length * sign"
+        yield "int = mathutils.geometry.intersect_line_plane(point, point + plane_no, plane_co, plane_no, False)"
+        yield "if int is None: projection = mathutils.Vector((0, 0, 0))"
+        yield "else: projection = int"
+        yield "sign = -1 if (point - projection).dot(plane_no) < 0 else 1"
+        yield "distance = (projection - point).length * sign" #if isLiked["distance"]: 
     
-#        yield "if int is None:"
-#        yield "    projection = mathutils.Vector((0, 0, 0))"
-#        if isLiked["distance"]: yield "    distance = (lineStart - point)length"
-#        
-#        yield "else:"
-#        yield "    projection = int"
-#        if isLiked["distance"]: yield "    distance = (projection - point)length"
-#        
     def getUsedModules(self):
         return ["mathutils"]
 
@@ -62,6 +56,7 @@ distance = (projection - point)length * sign"
 
 def getPlane(type):
     if type == "POINT_AND_NORMAL": 
-        return "planePoint, (planeNormal if planeNormal != mathutils.Vector((0, 0, 0)) else mathutils.Vector((0, 0, 1)) )"
+        
+        return "planePoint, planeNormal" # if planeNormal != mathutils.Vector((0, 0, 0)) else mathutils.Vector((0, 0, 1))  
     if type == "MATRIX_XY": 
         return "matrix.to_translation(), matrix.to_3x3() * mathutils.Vector((0, 0, 1))"

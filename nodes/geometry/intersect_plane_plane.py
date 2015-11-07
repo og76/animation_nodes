@@ -22,24 +22,24 @@ class IntersectPlanePlaneNode(bpy.types.Node, AnimationNode):
     def create(self):
         self.width = 160
         self.inputs.new("an_VectorSocket", "Plane 1 Point", "planePoint1")
-        self.inputs.new("an_VectorSocket", "Plane 1 Normal", "planeNormal1")
+        self.inputs.new("an_VectorSocket", "Plane 1 Normal", "planeNormal1").value = (1, 0, 0)
         self.inputs.new("an_MatrixSocket", "Matrix XY Plane 1", "matrix1")
         
         self.inputs.new("an_VectorSocket", "Plane 2 Point", "planePoint2")
-        self.inputs.new("an_VectorSocket", "Plane 2 Normal", "planeNormal2")
+        self.inputs.new("an_VectorSocket", "Plane 2 Normal", "planeNormal2").value = (0, 0, 1)
         self.inputs.new("an_MatrixSocket", "Matrix XY Plane 2", "matrix2")
         self.updateHideStatus()
         
         self.outputs.new("an_VectorSocket", "Intersection Vector", "intersection")
-        self.outputs.new("an_VectorSocket", "Dorection Vector", "direction")
+        self.outputs.new("an_VectorSocket", "Direction Vector", "direction")
         
     def draw(self, layout):
-        layout.prop(self, "planeType1", text = "1:")
-        layout.prop(self, "planeType2", text = "2:")
+        layout.prop(self, "planeType1", text = "")
+        layout.prop(self, "planeType2", text = "")
         
     def getExecutionCode(self):
-        yield "p1_co, p1_no = " + getPlane(self.planeType1, 1)
-        yield "p2_co, p2_no = " + getPlane(self.planeType2, 2)
+        yield "p1_co, p1_no = " + getPlanes(self.planeType1, 1)
+        yield "p2_co, p2_no = " + getPlanes(self.planeType2, 2)
         yield "int = mathutils.geometry.intersect_plane_plane(p1_co, p1_no, p2_co, p2_no)"
         
         yield "if int != (None, None): intersection, direction = int"

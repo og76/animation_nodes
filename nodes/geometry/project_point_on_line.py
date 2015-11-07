@@ -14,18 +14,19 @@ class ProjectPointOnLineNode(bpy.types.Node, AnimationNode):
         
         self.outputs.new("an_VectorSocket", "Projection", "projection")
         self.outputs.new("an_FloatSocket", "Projection Factor", "factor")
-        self.outputs.new("an_BooleanSocket", "Distance to Line", "distance")
+        self.outputs.new("an_FloatSocket", "Distance to Line", "distance")
         
     def getExecutionCode(self):
         isLinked = self.getLinkedOutputsDict()
+        if not any(isLinked.values()): return ""
         
         yield "if lineStart == lineEnd:"
         yield "    projection, factor = lineStart, 0.0"
-        if isLiked["distance"]: yield "    distance = (lineStart - point)length"
+        yield "    distance = (lineStart - point).length" #if isLiked["distance"]: 
         
         yield "else:"
         yield "    projection, factor = mathutils.geometry.intersect_point_line(point, lineStart, lineEnd)"
-        if isLiked["distance"]: yield "    distance = (projection - point)length"
+        yield "    distance = (projection - point).length" #if isLiked["distance"]: 
         
     def getUsedModules(self):
         return ["mathutils"]

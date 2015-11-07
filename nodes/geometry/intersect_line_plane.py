@@ -20,10 +20,10 @@ class IntersectLinePlaneNode(bpy.types.Node, AnimationNode):
     def create(self):
         self.width = 160
         self.inputs.new("an_VectorSocket", "Line Start", "lineStart")
-        self.inputs.new("an_VectorSocket", "Line End", "lineEnd")
+        self.inputs.new("an_VectorSocket", "Line End", "lineEnd").value = (0, 0, 1)
         
         self.inputs.new("an_VectorSocket", "Plane Point", "planePoint")
-        self.inputs.new("an_VectorSocket", "Plane Normal", "planeNormal")
+        self.inputs.new("an_VectorSocket", "Plane Normal", "planeNormal").value = (0, 0, 1)
         self.inputs.new("an_MatrixSocket", "Matrix XY Plane", "matrix")
         self.updateHideStatus()
         
@@ -34,7 +34,8 @@ class IntersectLinePlaneNode(bpy.types.Node, AnimationNode):
         layout.prop(self, "planeType", text = "")
         
     def getExecutionCode(self):
-        yield "int = mathutils.geometry.intersect_line_plane" + getPlane(self.planeType)
+        yield "plane_co, plane_no = " + getPlane(self.planeType)
+        yield "int = mathutils.geometry.intersect_line_plane(lineStart, lineEnd, plane_co, plane_no, False)"
         
         yield "if int is None: intersection, isValid = mathutils.Vector((0, 0, 0)), False"
         yield "else: intersection, isValid = int, True"
@@ -53,9 +54,6 @@ class IntersectLinePlaneNode(bpy.types.Node, AnimationNode):
 
 def getPlane(type):
     if type == "POINT_AND_NORMAL": 
-        return "(lineStart, lineEnd, planePoint, planeNormal, False)"
+        return "planePoint, planeNormal"
     if type == "MATRIX_XY": 
-        a = "(lineStart, lineEnd, "
-        b = "matrix.to_translation(), matrix.to_3x3() * mathutils.Vector((0, 0, 1)),"
-        c = " False)"
-        return a + b + c
+        return "matrix.to_translation(), matrix.to_3x3() * mathutils.Vector((0, 0, 1))"

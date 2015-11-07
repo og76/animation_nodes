@@ -26,8 +26,8 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
         layout.label('3 vectors for Tri2')
         
     def getExecutionCode(self):
-        yield "if len(points1) < 3: location, self.errorMessage = point, 'Expected 3 vectors for Tri 1'"
-        yield "elif len(points2) < 3: location, self.errorMessage = point, 'Expected 3 vectors for Tri 2'"
+        yield "if len(t1) < 3: location, self.errorMessage = point, 'Expected 3 vectors for Tri 1'"
+        yield "elif len(t2) < 3: location, self.errorMessage = point, 'Expected 3 vectors for Tri 2'"
         yield "elif any((t1[0]==t1[1], t1[1]==t1[2], t1[2]==t1[0])): location, self.errorMessage = point, 'Expected 3 Different vectors for Tri 1'"
         
         yield "else: location, self.errorMessage = mathutils.geometry.barycentric_transform(point, t1[0], t1[1], t1[2], t2[0], t2[1], t2[2]), ''"
