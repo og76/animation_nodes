@@ -56,9 +56,9 @@ class QuaternionMathNode(bpy.types.Node, AnimationNode):
         elif op == "CROSS": return "result = a.cross(b)"
         elif op == "ROTATION_DIFFERENCE": return "result = a.rotation_difference(b)"
         elif op == "COMBINE": return "result = a * b"
-        elif op == "NORMALIZE": return "result = a.normalized() * scale"
+        elif op == "NORMALIZE": return "result = mathutils.Quaternion((A * scale for A in a.normalized()))"
         elif op == "SCALE": return "result = a * scale"
-        elif op == "REFLECT": return "result = a.rotation_difference(b)"
+        elif op == "REFLECT": return "result = a.rotation_difference(b) * b"
 
     def getUsedModules(self):
         return ["mathutils"]
