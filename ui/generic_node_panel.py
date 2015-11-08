@@ -1,18 +1,30 @@
 import bpy
 from bpy.props import *
 
+
+
 def draw(self, context):
     node = bpy.context.active_node
     if not getattr(node, "isAnimationNode", False): return
 
     layout = self.layout
-    layout.separator()
-
-    layout.prop(node, "width", text = "Width")
-
+    
+    #developerExtra = BoolProperty(name = "Developer Extra", default = False)
+    
     col = layout.column(align = True)
+    col.label("Identifier: " + node.identifier)
+    col.separator()
+    
+    row = layout.row(align = True)
+    col = row.column(align = True)
     col.prop(node, "location", text = "X", index = 0)
     col.prop(node, "location", text = "Y", index = 1)
+
+    row = layout.row(align = True)
+    row.prop(node, "width", text = "Width")
+    row.separator()
+    row.prop(self, "developerExtra", text = "xxx", icon = "SCRIPTWIN")
+
 
     row = layout.row(align = True)
 
@@ -42,23 +54,28 @@ def draw(self, context):
     node.invokeFunction(row, "toogleRemoveOperatorVisibility", text = "Remove")
     node.invokeFunction(row, "disableSocketEditingInNode", icon = "FULLSCREEN")
 
-    layout.separator()
-    layout.label("Identifier: " + node.identifier)
+
 
 
 class SocketUiList(bpy.types.UIList):
     bl_idname = "an_SocketUiList"
 
     def draw_item(self, context, layout, node, socket, icon, activeData, activePropname):
+        row = layout.row()
+
         if socket.textProps.editable:
-            layout.prop(socket, "text", emboss = False, text = "")
-        else: layout.label(socket.getDisplayedName())
+            row.prop(socket, "text", emboss = False, text = "")
+        else: row.label(socket.getDisplayedName())
 
+        col = row.column()
+        col.scale_x = 0.5
         if socket.removeable:
-            socket.invokeFunction(layout, "remove", icon = "X", emboss = False)
+            socket.invokeFunction(col, "remove", icon = "X", emboss = False)
 
+        col = row.column()
+        col.scale_x = 0.5
         icon = "RESTRICT_VIEW_ON" if socket.hide else "RESTRICT_VIEW_OFF"
-        layout.prop(socket, "hide", text = "", icon_only = True, icon = icon, emboss = False)
+        col.prop(socket, "hide", text = "", icon_only = True, icon = icon, emboss = False)
 
 
 class MoveInputSocket(bpy.types.Operator):
