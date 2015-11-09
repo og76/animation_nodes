@@ -12,5 +12,5 @@ class QuaternionListCombineNode(bpy.types.Node, AnimationNode):
         self.inputs.new("an_QuaternionListSocket", "Quaternions", "quaternions")
         self.outputs.new("an_QuaternionSocket", "Result", "result")
 
-    def execute(self, matrices):
+    def execute(self, quaternions):
         return functools.reduce(operator.mul, reversed(quaternions), Quaternion((1, 0, 0, 0)))
