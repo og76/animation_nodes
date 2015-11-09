@@ -21,6 +21,7 @@ listChains = [
     ["an_VertexSocket", "an_VertexListSocket"],
     ["an_GenericSocket", "an_GenericListSocket"],
     ["an_FCurveSocket", "an_FCurveListSocket"],
+    ["an_NLAStripSocket", "an_NLAStripListSocket"],
     ["an_ObjectGroupSocket", "an_ObjectGroupListSocket"],
     ["an_EulerSocket", "an_EulerListSocket"],
     ["an_QuaternionSocket", "an_QuaternionListSocket"],
