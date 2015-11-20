@@ -12,8 +12,7 @@ operationItems = [
     ("ROTATION_DIFFERENCE", "Rotation Difference", "AB rot_diff Projection of A on B, the parallel projection vector", "", 5),
     ("COMBINE", "Combine", "A combine B  Combine rotations of A and B", "", 6),
     ("NORMALIZE", "Normalize", "A normalize Scale the vector to a length of 1", "", 7),
-    ("SCALE", "Scale", "A * scale", "", 8),
-    ("REFLECT", "Reflect", "A reflect B  Reflection of A from mirror B, the reflected vector", "", 9) ]
+    ("SCALE", "Scale", "A * scale", "", 8) ]
 
 operationsWithFloat = ["NORMALIZE", "SCALE"]
 
@@ -49,16 +48,16 @@ class QuaternionMathNode(bpy.types.Node, AnimationNode):
         if op == "ADD": return "result = a + b"
         elif op == "SUBTRACT": return "result = a - b"
         elif op == "MULTIPLY": return "result = mathutils.Quaternion((A * B for A, B in zip(a, b)))"
-        elif op == "DIVIDE": return ("result = mathutils.Vector((0, 0, 0))",
+        elif op == "DIVIDE": return ("result = mathutils.Quaternion((1, 0, 0, 0))",
                                      "if b[0] != 0: result[0] = a[0] / b[0]",
                                      "if b[1] != 0: result[1] = a[1] / b[1]",
-                                     "if b[2] != 0: result[2] = a[2] / b[2]")
+                                     "if b[2] != 0: result[2] = a[2] / b[2]",
+                                     "if b[3] != 0: result[3] = a[3] / b[3]")
         elif op == "CROSS": return "result = a.cross(b)"
         elif op == "ROTATION_DIFFERENCE": return "result = a.rotation_difference(b)"
         elif op == "COMBINE": return "result = a * b"
         elif op == "NORMALIZE": return "result = mathutils.Quaternion((A * scale for A in a.normalized()))"
         elif op == "SCALE": return "result = a * scale"
-        elif op == "REFLECT": return "result = a.rotation_difference(b) * b"
 
     def getUsedModules(self):
         return ["mathutils"]

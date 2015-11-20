@@ -44,9 +44,9 @@ class RoundDataNode(bpy.types.Node, AnimationNode):
         self.outputs.new(idName, "Rounded " + self.dataType, "rounded")
 
     def getExecutionCode(self):
-        if self.dataType == "Euler" and self.roundDegree: 
-            return "rounded = mathutils.Euler((math.radians(round(math.degrees(item), decimals)) for item in input))"
-        else: return "rounded = mathutils.{}((round(item, decimals) for item in input))".format(self.dataType)
-
-    def getUsedModules(self):
-        return ["mathutils", "math"]
+#        if self.dataType == "Euler" and self.roundDegree: 
+#            return "rounded = mathutils.Euler((math.radians(round(math.degrees(item), decimals)) for item in input))"
+#        else: return "rounded = mathutils.{}((round(item, decimals) for item in input))".format(self.dataType)
+        return "rounded = [round(item, decimals) for item in input]".format(self.dataType)
+#    def getUsedModules(self):
+#        return ["mathutils", "math"]

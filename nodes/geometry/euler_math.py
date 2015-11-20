@@ -8,12 +8,10 @@ operationItems = [
     ("SUBTRACT", "Subtract", "A - B", "", 1),
     ("MULTIPLY", "Multiply", "A * B       Multiply element by element", "", 2),
     ("DIVIDE", "Divide", "A / B       Divide element by element", "", 3),
-    ("CROSS", "Cross Product", "A cross B   Calculate perpendicular to both directions, right hand thumb rule", "", 4),
-    ("REFLECT", "Reflect", "A reflect B  Reflection of A from mirror B, ", "", 5),
-    ("SCALE", "Scale", "A * scale", "", 6),
-    ("ROUND", "Scale", "A round B", "", 7) ]
+    ("SCALE", "Scale", "A * scale", "", 4) ]
 
-operationsWithFloat = ["ROUND", "SCALE"]
+operationsWithFloat = ["SCALE"]
+operationsWithDegree = ["MULTIPLY", "DIVIDE"]
 
 operationLabels = {item[0] : item[2][:11] for item in operationItems}
 
@@ -27,6 +25,9 @@ class EulerMathNode(bpy.types.Node, AnimationNode):
         executionCodeChanged()
 
     operation = EnumProperty(name = "Operation", items = operationItems, default = "ADD", update = operationChanged)
+    useDegree = BoolProperty(name = "Use Degrees",
+        description = "Multiply and Divide degrees. If false, operation will use radians (output is always radians)",
+        default = True, update = executionCodeChanged)
 
     def create(self):
         self.inputs.new("an_EulerSocket", "A", "a")
@@ -38,6 +39,9 @@ class EulerMathNode(bpy.types.Node, AnimationNode):
 
     def draw(self, layout):
         layout.prop(self, "operation", text = "")
+        
+    def drawAdvanced(self, layout):
+        if self.operation in operationsWithDegree: layout.prop(self, "useDegree")
 
     def drawLabel(self):
         return operationLabels[self.operation]
@@ -46,15 +50,24 @@ class EulerMathNode(bpy.types.Node, AnimationNode):
         op = self.operation
         if op == "ADD": return "result = mathutils.Euler((a[0] + b[0], a[1] + b[1], a[2] + b[2]), 'XYZ')"
         elif op == "SUBTRACT": return "result = mathutils.Euler((a[0] - b[0], a[1] - b[1], a[2] - b[2]), 'XYZ')"
-        elif op == "MULTIPLY": return "result = mathutils.Euler((a[0] * b[0], a[1] * b[1], a[2] * b[2]), 'XYZ')"
-        elif op == "DIVIDE": return ("result = mathutils.Euler((0, 0, 0), 'XYZ')",
-                                     "if b[0] != 0: result[0] = a[0] / b[0]",
-                                     "if b[1] != 0: result[1] = a[1] / b[1]",
-                                     "if b[2] != 0: result[2] = a[2] / b[2]")
-        elif op == "CROSS": return "result = mathutils.Euler((a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]), 'XYZ')"
-        elif op == "REFLECT": return "result = mathutils.Euler( (B - A + math.pi for A,B in zip(a, b) ), 'XYZ')"
+    
+        elif op == "MULTIPLY":
+            if self.useDegree:
+                return "result = mathutils.Euler((math.radians(math.degrees(A) * math.degrees(B)) for A, B in zip(a, b)), 'XYZ')"
+            else: return "result = mathutils.Euler((a[0] * b[0], a[1] * b[1], a[2] * b[2]), 'XYZ')"
+        elif op == "DIVIDE":
+            if self.useDegree:
+                return ("result = mathutils.Euler((0, 0, 0), 'XYZ')",
+                                 "if b[0] != 0: result[0] = math.radians(math.degrees(a[0]) / math.degrees(b[0]))",
+                                 "if b[1] != 0: result[1] = math.radians(math.degrees(a[0]) / math.degrees(b[0]))",
+                                 "if b[2] != 0: result[2] = math.radians(math.degrees(a[0]) / math.degrees(b[0]))")
+            else: 
+                return ("result = mathutils.Euler((0, 0, 0), 'XYZ')",
+                                 "if b[0] != 0: result[0] = a[0] / b[0]",
+                                 "if b[1] != 0: result[1] = a[1] / b[1]",
+                                 "if b[2] != 0: result[2] = a[2] / b[2]")
+                                     
         elif op == "SCALE": return "result = mathutils.Euler((a[0] * scale, a[1] * scale, a[2] * scale), 'XYZ')"
-        elif op == "ROUND": return "result = mathutils.Euler((round(A, int(scale)) for A in a), 'XYZ')"
 
     def getUsedModules(self):
         return ["math, mathutils"]

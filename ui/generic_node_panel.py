@@ -22,8 +22,8 @@ def draw(self, context):
 
     row = layout.row(align = True)
     row.prop(node, "width", text = "Width")
-    row.separator()
-    row.prop(self, "developerExtra", text = "xxx", icon = "SCRIPTWIN")
+#    row.separator()
+#    row.prop(self, "developerExtra", text = "xxx", icon = "SCRIPTWIN")
 
 
     row = layout.row(align = True)
