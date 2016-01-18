@@ -17,9 +17,9 @@ operationsWithDegree = ["MULTIPLY", "DIVIDE", "STEP"]
 
 operationLabels = {item[0] : item[2][:11] for item in operationItems}
 
-class EulerMathNode(bpy.types.Node, AnimationNode):
-    bl_idname = "an_EulerMathNode"
-    bl_label = "Euler Math"
+class EulerMath2Node(bpy.types.Node, AnimationNode):
+    bl_idname = "an_EulerMath2Node"
+    bl_label = "Euler Math2"
 
     def operationChanged(self, context):
         self.inputs["B"].hide = self.operation in operationsWithFloat

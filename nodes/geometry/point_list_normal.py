@@ -21,7 +21,7 @@ class PointListNormalNode(bpy.types.Node, AnimationNode):
         
     def getExecutionCode(self):
         yield "if len(points) > 2: normal, self.errorMessage = mathutils.geometry.normal(points), ''"
-        yield "else: normal, self.errorMessage = mathutils.Vector((0, 0, 0)), 'Expected > 3 vectors'"
+        yield "else: normal, self.errorMessage = mathutils.Vector((0, 0, 0)), 'Expected min 3 different vectors'"
 
         yield "isValid = normal != mathutils.Vector((0, 0, 0))"
         

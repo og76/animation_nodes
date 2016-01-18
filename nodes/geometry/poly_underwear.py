@@ -54,10 +54,10 @@ class PolyUnderwearNode(bpy.types.Node, AnimationNode):
             # stripeVerts
             yield "centralPoly = []"
             yield "for i, polyVert in enumerate(polyVerts):"
-            yield "    polyVert0 = (i-1)" #% lenPV"
+            yield "    polyVert0 = polyVerts[(i - 1)]"# % lenPV]"
             yield "    middle = polyVert0.lerp(polyVert, middleOffset)"
 
-            yield "    V0 = Center.lerp(polyVert, lerpfac)"
+            yield "    V0 = Center.lerp(polyVert0, lerpfac)"
             yield "    V1 = middle.lerp(polyVert0, wFactor)"
             yield "    V2 = middle.lerp(polyVert, wFactor)"                     
             yield "    vertexLocations.extend([V0, V1, V2])"

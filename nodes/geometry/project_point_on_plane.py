@@ -34,13 +34,12 @@ class ProjectPointOnPlaneNode(bpy.types.Node, AnimationNode):
         
     def getExecutionCode(self):
         isLinked = self.getLinkedOutputsDict()
+        if not any(isLinked.values()): return ""
         
         yield "plane_co, plane_no = " + getPlane(self.planeType)
         yield "int = mathutils.geometry.intersect_line_plane(point, point + plane_no, plane_co, plane_no, False)"
-        yield "if int is None: projection = mathutils.Vector((0, 0, 0))"
-        yield "else: projection = int"
-        yield "sign = -1 if (point - projection).dot(plane_no) < 0 else 1"
-        yield "distance = (projection - point).length * sign" #if isLiked["distance"]: 
+        yield "projection = mathutils.Vector((0, 0, 0)) if int is None else int"
+        if isLinked["distance"]: yield "distance = (point - projection).length * (-1 if (point - projection).dot(plane_no) < 0 else 1)"
     
     def getUsedModules(self):
         return ["mathutils"]
@@ -56,7 +55,6 @@ class ProjectPointOnPlaneNode(bpy.types.Node, AnimationNode):
 
 def getPlane(type):
     if type == "POINT_AND_NORMAL": 
-        
-        return "planePoint, planeNormal" # if planeNormal != mathutils.Vector((0, 0, 0)) else mathutils.Vector((0, 0, 1))  
+        return "planePoint, planeNormal if planeNormal != mathutils.Vector((0, 0, 0)) else mathutils.Vector((0, 0, 1))"
     if type == "MATRIX_XY": 
         return "matrix.to_translation(), matrix.to_3x3() * mathutils.Vector((0, 0, 1))"
