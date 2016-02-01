@@ -27,6 +27,7 @@ class SortVectorsNode(bpy.types.Node, AnimationNode):
 
     operation = EnumProperty(name = "Operation", items = operationItems, default = "DIRECTION", update = operationChanged)
     reversed = BoolProperty(name = "Reverse Order", default = True, update = propertyChanged)
+    precision = IntProperty(name = "Precision Digits", default = 4, update = propertyChanged)
         
     def create(self):
         self.width = 180
@@ -42,6 +43,9 @@ class SortVectorsNode(bpy.types.Node, AnimationNode):
     def draw(self, layout):
         layout.prop(self, "operation", text = "")
         layout.prop(self, "reversed")
+
+    def drawAdvanced(self, layout):
+        layout.prop(self, "precision")
 
     def drawLabel(self):
         return operationLabels[self.operation]
@@ -66,7 +70,7 @@ class SortVectorsNode(bpy.types.Node, AnimationNode):
         
 
 def getConditions(type):
-    if type == "DISTANCE": return "[(v - vector).length for v in vectorList], fillvalue = 0"
-    elif type == "DIRECTION": return "[v.dot(vector) for v in vectorList], fillvalue = 0"
+    if type == "DISTANCE": return "[round((v - vector).length_squared, self.precision) for v in vectorList], fillvalue = 0"
+    elif type == "DIRECTION": return "[round(v.dot(vector), self.precision) for v in vectorList], fillvalue = 0"
     elif type == "CUSTOM_FLOAT": return "numbers[:len(vectorList)], fillvalue = min(numbers) if numbers else 0"
     elif type == "CUSTOM_STRING": return "strings, fillvalue = 'a'"
