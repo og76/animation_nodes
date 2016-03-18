@@ -18,14 +18,15 @@ class SoundFrequencyRange(bpy.types.PropertyGroup):
 class SoundBakeNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_SoundBakeNode"
     bl_label = "Sound Bake"
+    bl_width_default = 300
 
     soundName = StringProperty(name = "Sound")
 
     activeBakeDataIndex = IntProperty()
     activeEqualizerDataIndex = IntProperty()
 
-    low = IntProperty(name = "Low", default = 0, min = 0)
-    high = IntProperty(name = "High", default = 20000, min = 0)
+    low = IntProperty(name = "Low", default = 0, min = 0, max = 20000)
+    high = IntProperty(name = "High", default = 20000, min = 0, max = 20000)
     attack = FloatProperty(name = "Attack", default = 0.005, precision = 3)
     release = FloatProperty(name = "Release", default = 0.2, precision = 3)
 
@@ -35,7 +36,6 @@ class SoundBakeNode(bpy.types.Node, AnimationNode):
     bakeProgress = StringProperty()
 
     def create(self):
-        self.width = 300
         self.setEqualizerFrequencyRanges(frequencyRanges)
 
     def draw(self, layout):
@@ -62,6 +62,10 @@ class SoundBakeNode(bpy.types.Node, AnimationNode):
         self.drawForSound(box, self.sound)
 
     def drawForSound(self, layout, sound):
+        if sound.users == 0:
+            col = layout.column()
+            col.scale_y = 1.5
+            self.invokeFunction(col, "removeActiveSound", text = "This sound is not used. Remove it?", icon = "CANCEL")
         row = layout.row()
         col = row.column(align = True)
         col.prop(self, "low")
@@ -188,6 +192,10 @@ class SoundBakeNode(bpy.types.Node, AnimationNode):
         sequences = [sequence for sequence in editor.sequences if getattr(sequence, "sound", -1) == sound]
         for sequence in sequences:
             editor.sequences.remove(sequence)
+        self.removeActiveSound()
+
+    def removeActiveSound(self):
+        sound = self.sound
         if sound.users == 0:
             bpy.data.sounds.remove(sound)
 

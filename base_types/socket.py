@@ -44,7 +44,9 @@ class AnimationNodeSocket:
     moveable = BoolProperty(default = False)
     moveGroup = IntProperty(default = 0)
 
-    isUsed = BoolProperty(default = True, update = executionCodeChanged)
+    isUsed = BoolProperty(name = "Is Used", default = True,
+        description = "Enable this socket (orange point means that the socket will be evaluated)",
+        update = executionCodeChanged)
     useIsUsedProperty = BoolProperty(default = False)
 
     display = PointerProperty(type = SocketDisplayProperties)
@@ -78,7 +80,7 @@ class AnimationNodeSocket:
 
         if self.useIsUsedProperty:
             icon = "LAYER_ACTIVE" if self.isUsed else "LAYER_USED"
-            row.prop(self, "isUsed", text = "", icon = icon, icon_only = True)
+            row.prop(self, "isUsed", text = "", icon = icon)
 
     def drawSocket(self, layout, text, drawType = "TEXT_PROPERTY"):
         '''

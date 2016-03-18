@@ -1,4 +1,3 @@
-from . node_sorting import sortNodes
 from . compile_scripts import compileScript
 from .. problems import ExecutionUnitNotSetup
 from . code_generator import (getInitialVariables,
@@ -40,9 +39,7 @@ class LoopExecutionUnit:
 
 
     def generateScript(self):
-        nodes = self.network.getAnimationNodes()
-
-        try: nodes = sortNodes(nodes)
+        try: nodes = self.network.getSortedAnimationNodes()
         except: return
 
         variables = getInitialVariables(nodes)

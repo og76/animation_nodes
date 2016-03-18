@@ -13,9 +13,10 @@ dataByNode = {}
 class DebugDrawerNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_DebugDrawerNode"
     bl_label = "Debug Drawer"
+    bl_width_default = 270
 
     maxRows = IntProperty(name = "Max Rows", default = 150, min = 0)
-    fontSize = IntProperty(name = "Font Size", default = 14, min = 1, max = 1000)
+    fontSize = IntProperty(name = "Font Size", default = 12, min = 1, max = 1000)
     maxListStartElements = IntProperty(name = "Max List Start Elements", default = 15, min = 0)
     maxListEndElements = IntProperty(name = "Max List End Elements", default = 0, min = 0)
     oneElementPerLine = BoolProperty(name = "One Element per Line", default = True)
@@ -23,7 +24,6 @@ class DebugDrawerNode(bpy.types.Node, AnimationNode):
     errorMessage = StringProperty()
 
     def create(self):
-        self.width = 270
         self.inputs.new("an_GenericSocket", "Data", "data")
         self.inputs.new("an_BooleanSocket", "Condition", "condition").hide = True
 

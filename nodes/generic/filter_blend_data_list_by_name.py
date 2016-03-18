@@ -12,6 +12,8 @@ filterTypeItems = [("STARTS_WITH", "Starts With", "All Objects with names starti
 class FilterBlendDataListByNameNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_FilterBlendDataListByNameNode"
     bl_label = "Filter Blend Data List By Name"
+    bl_width_default = 170
+    dynamicLabelType = "ALWAYS"
 
     onlySearchTags = True
     searchTags = [("Filter {} List by Name".format(name), {"dataType" : repr(name)}) for name in dataTypes]
@@ -30,7 +32,7 @@ class FilterBlendDataListByNameNode(bpy.types.Node, AnimationNode):
         update = executionCodeChanged)
 
     def create(self):
-        self.width = 170
+        self.createSockets()
 
     def draw(self, layout):
         layout.prop(self, "filterType", expand = True)

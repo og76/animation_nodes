@@ -95,10 +95,14 @@ class VectorMenu(bpy.types.Menu):
         insertNode(layout, "an_VectorWiggleNode", "Wiggle")
         insertNode(layout, "an_MixDataNode", "Mix", {"dataType" : repr("Vector")})
         layout.separator()
-        insertNode(layout, "an_VectorLengthNode", "Length")
         insertNode(layout, "an_VectorDistanceNode", "Distance")
-        insertNode(layout, "an_VectorDotProductNode", "Dot Product")
+        insertNode(layout, "an_DistanceVectorToLineNode", "Distance to Line")
+        insertNode(layout, "an_DistanceVectorToPlaneNode", "Distance to Plane")
+        layout.separator()
         insertNode(layout, "an_VectorAngleNode", "Angle")
+        insertNode(layout, "an_VectorLengthNode", "Length")
+        insertNode(layout, "an_VectorDotProductNode", "Dot Product")
+        layout.separator()
         insertNode(layout, "an_VectorMathNode", "Math")
         insertNode(layout, "an_VectorListMathNode", "List Math")
         insertNode(layout, "an_TransformVectorNode", "Transform Vector")
@@ -349,10 +353,7 @@ class MeshMenu(bpy.types.Menu):
         insertNode(layout, "an_BMeshFromObjectNode", "BMesh from Object")
         layout.menu("an_mesh_finalizing_menu", text = "Tools")
         layout.separator()
-        layout.label("Set On Object:")
-        insertNode(layout, "an_SetVerticesOnObjectNode", "  Vertex Locations")
-        insertNode(layout, "an_SetMeshDataOnObjectNode", "  Mesh Data")
-        insertNode(layout, "an_SetBMeshOnObjectNode", "  BMesh")
+        insertNode(layout, "an_MeshObjectOutputNode", "Object Output")
 
 class MeshGeneratorsMenu(bpy.types.Menu):
     bl_idname = "an_mesh_generators_menu"
@@ -410,8 +411,7 @@ class SplineMenu(bpy.types.Menu):
         insertNode(layout, "an_GetSplineLengthNode", "Get Length")
         insertNode(layout, "an_GetSplineSamplesNode", "Get Samples")
         layout.separator()
-        insertNode(layout, "an_SetSplinesOnObjectNode", "Set on Object")
-        insertNode(layout, "an_CurveObjectOutputNode", "Curve Object Output")
+        insertNode(layout, "an_CurveObjectOutputNode", "Object Output")
         layout.separator()
         insertNode(layout, "an_LoftSplinesNode", "Loft")
         insertNode(layout, "an_RevolveSplineNode", "Revolve")
@@ -442,8 +442,10 @@ class InterpolationMenu(bpy.types.Menu):
         insertNode(layout, "an_ConstructInterpolationNode", "Construct")
         insertNode(layout, "an_InterpolationFromCurveMappingNode", "From Curve Mapping")
         insertNode(layout, "an_InterpolationFromFCurveNode", "From FCurve")
-        insertNode(layout, "an_EvaluateInterpolationNode", "Evaluate")
         insertNode(layout, "an_MixInterpolationNode", "Mix")
+        layout.separator()
+        insertNode(layout, "an_EvaluateInterpolationNode", "Evaluate")
+        insertNode(layout, "an_MapRangeNode", "Map Range", {"useInterpolation" : repr(True)})
 
 class MaterialMenu(bpy.types.Menu):
     bl_idname = "an_material_menu"
@@ -513,6 +515,8 @@ class KDTreeAndBVHTreeMenu(bpy.types.Menu):
         layout.separator()
         insertNode(layout, "an_ConstructBVHTreeNode", "Construct BVHTree")
         insertNode(layout, "an_RayCastBVHTreeNode", "Ray Cast")
+        insertNode(layout, "an_FindNearestSurfacePointNode", "Find Nearest")
+        insertNode(layout, "an_IsInsideVolumeBVHTreeNode", "Is Inside Volume")
 
 class DebugMenu(bpy.types.Menu):
     bl_idname = "an_debug_menu"

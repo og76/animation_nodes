@@ -6,6 +6,7 @@ from .. utils.nodes import getAnimationNodeTrees
 from .. events import treeChanged, isRendering, propertyChanged
 from .. nodes.generic.debug_loop import clearDebugLoopTextBlocks
 from .. utils.blender_ui import iterActiveScreens, isViewportRendering
+from .. tree_info import getNetworksByNodeTree, getSubprogramNetworksByNodeTree
 from .. execution.units import getMainUnitsByNodeTree, setupExecutionUnits, finishExecutionUnits
 
 class AutoExecutionProperties(bpy.types.PropertyGroup):
@@ -45,7 +46,6 @@ class AnimationNodeTree(bpy.types.NodeTree):
         description = "The global scene used by this node tree (never none)")
 
     editNodeLabels = BoolProperty(name = "Edit Node Labels", default = False)
-    dynamicNodeLabels = BoolProperty(name = "Dynamic Node Labels", default = True)
 
     def update(self):
         treeChanged()
@@ -116,6 +116,14 @@ class AnimationNodeTree(bpy.types.NodeTree):
     @property
     def timeSinceLastAutoExecution(self):
         return abs(time.clock() - self.autoExecution.lastExecutionTimestamp)
+
+    @property
+    def networks(self):
+        return getNetworksByNodeTree(self)
+
+    @property
+    def subprogramNetworks(self):
+        return getSubprogramNetworksByNodeTree(self)
 
 @eventHandler("SCENE_UPDATE_POST")
 def updateSelectedScenes(scene):

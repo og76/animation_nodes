@@ -60,7 +60,8 @@ class SimpleConvert(LinkCorrection):
         ("Object", "Vector") : "an_ObjectTransformsInputNode",
         ("Object", "Matrix") : "an_ObjectMatrixInputNode",
         ("Polygon List", "Mesh Data") : "an_MeshDataFromPolygonsNode",
-        ("Object", "Shape Key List") : "an_ShapeKeysFromObjectNode"
+        ("Object", "Shape Key List") : "an_ShapeKeysFromObjectNode",
+        ("String", "Float") : "an_ParseNumberNode"
     }
 
     def check(self, origin, target):
@@ -127,6 +128,16 @@ class ConvertElementToList(LinkCorrection):
         node.assignBaseDataType(origin.dataType, inputAmount = 1)
         insertBasicLinking(nodeTree, origin, node, target)
 
+
+class ConvertVectorListToSplineList(LinkCorrection):
+    def check(self, origin, target):
+        return origin.dataType == "Vector List" and target.dataType == "Spline List"
+    def insert(self, nodeTree, origin, target, dataOrigin):
+        splineFromPoints, createList = insertNodes(nodeTree, ["an_SplineFromPointsNode", "an_CreateListNode"], origin, target)
+        createList.assignBaseDataType("Spline", inputAmount = 1)
+        nodeTree.links.new(splineFromPoints.inputs[0], origin)
+        nodeTree.links.new(createList.inputs[0], splineFromPoints.outputs[0])
+        nodeTree.links.new(createList.outputs[0], target)
 
 class ConvertObjectToShapeKey(LinkCorrection):
     def check(self, origin, target):
@@ -217,6 +228,7 @@ linkCorrectors = [
     ConvertNormalToEuler(),
     ConvertObjectToMeshData(),
     ConvertSeparatedMeshDataToBMesh(),
+    ConvertVectorListToSplineList(),
     ConvertVectorToEuler(),
     ConvertEulerToVector(),
     ConvertEulerToQuaternion(),
