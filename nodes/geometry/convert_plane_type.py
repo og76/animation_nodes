@@ -39,7 +39,7 @@ class ConvertPlaneTypeNode(bpy.types.Node, AnimationNode):
         if not any(isLinked.values()): return ""
     
         if self.conversionType == "POINT_NORMAL_TO_MATRIX":
-            return ("if planeNormal.length == 0:  planeNormal = mathutils.Vector((0, 0, 1))",
+            return ("if planeNormal.length_squared != 0:  planeNormal = mathutils.Vector((0, 0, 1))",
                     "matrix = (mathutils.Matrix.Translation(planePoint)) * ( (planeNormal.to_track_quat('Z', 'Y')).to_matrix().to_4x4() )" )
         if self.conversionType == "MATRIX_TO_POINT_NORMAL":
             if isLinked["planePoint"]: yield "planePoint = matrix.to_translation()"

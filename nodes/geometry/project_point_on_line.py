@@ -4,12 +4,12 @@ from ... base_types.node import AnimationNode
 
 class ProjectPointOnLineNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_ProjectPointOnLineNode"
-    bl_label = "Project Point on Line" # Closest Point on Line ?
+    bl_label = "Project Point on Line"
         
     def create(self):
         self.width = 160
         self.inputs.new("an_VectorSocket", "Point", "point")
-        self.inputs.new("an_VectorSocket", "Line Start", "lineStart")
+        self.inputs.new("an_VectorSocket", "Line Start", "lineStart").value = (1, 0, 0)
         self.inputs.new("an_VectorSocket", "Line End", "lineEnd").value = (0, 0, 1)
         
         self.outputs.new("an_VectorSocket", "Projection", "projection")
