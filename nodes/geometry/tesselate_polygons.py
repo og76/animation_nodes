@@ -2,42 +2,60 @@ import bpy
 from bpy.props import *
 from ... utils.layout import writeText
 from ... tree_info import keepNodeState
-from ... events import executionCodeChanged
+from ... events import executionCodeChanged, propertyChanged
+from ... base_types.node import AnimationNode
+from bmesh.ops import triangulate
 from mathutils.geometry import tessellate_polygon
 from bpy_extras.mesh_utils import ngon_tessellate
-from ... base_types.node import AnimationNode
 
-operationItems = [
-    ("TRI", "Mathutils Simple Tri", "", "", 0),
-    ("NGON", "Ngon Simple", "", "", 1),
-    ("NGON_FIX", "Ngon Fix Loops", "", "", 2)]
+
 polyTypeItems = [
     ("VECTORS", "Vectors in order", "", "", 0),
-    ("INDICES", "Simple Polygon index", "", "", 1),
-    ("INDICES_LIST", "Polygon Indices List", "", "", 2),
+    ("INDICES", "Simple Poly Index", "", "", 1),
+    ("INDICES_LIST", "Poly Indices List", "", "", 2),
     ("MESH", "Mesh Data", "", "", 3),
     ("POLY", "Polygon", "", "", 4),
     ("POLY_LIST", "Polygon List", "", "", 5),
     ("BMESH", "Bmesh", "", "", 6)]
 
+typesWithLoopFix = ["INDICES_LIST", "MESH"]
+
+operationItems = [
+    ("TRI", "Simple Mathutils Tri", "Speed ok. Use mathutils simple triangulate", "", 0),
+    ("NGON", "Ngon Simple", "Slower 2x-3x. Use extras ngon triangulate", "", 1)  ]
+operationItemsFix = operationItems + [
+    ("NGON_FIX", "Ngon Fix Loops", "Slower 4x-5x. Use extras ngon. Solve some loop stuf", "", 2)]
+    
 
 class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_PolygonsTessellateNode"
     bl_label = "Triangulate Polygons"
     searchLabels = ["Tesselate Point List"]
 
-    def operationChanged(self, context):
-        executionCodeChanged()
-    
     def polyTypeChanged(self, context):
         self.recreateSockets()
+        executionCodeChanged()
+        
+    def operationChanged(self, context):
+        executionCodeChanged()
 
     operation = EnumProperty(name = "Operation", default = "TRI",
                 items = operationItems, update = operationChanged)
+    operationFix = EnumProperty(name = "Operation Fix", default = "TRI",
+                items = operationItemsFix, update = operationChanged)
+                
     polyType = EnumProperty(name = "Polygon  Definition", default = "INDICES_LIST",
                 items = polyTypeItems, update = polyTypeChanged)
+    bmeshQuad = IntProperty(name = "Quad Method", update = propertyChanged, max = 3, min = 0)
+    bmeshNgon = IntProperty(name = "Ngon Method", update = propertyChanged, max = 1, min = 0)
+
     errorMessage = StringProperty()
-        
+
+    def getActiveEnumOp(self):
+        if self.polyType in typesWithLoopFix: 
+            return  self.operationFix
+        else: return  self.operation
+
     def create(self):
         self.width = 160
         self.recreateSockets()
@@ -74,12 +92,20 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
             self.outputs.new("an_IntegerListSocket", "Matching Ngon Indices", "ngonIndices")
         elif type == "BMESH":
             self.inputs.new("an_BMeshSocket", "BMesh", "bm")
-            self.outputs.new("an_BMeshSocket", "BMesh", "bm")
+            self.outputs.new("an_BMeshSocket", "BMesh", "bmOut")
 
 
     def draw(self, layout):
         layout.prop(self, "polyType", text = "")
-        layout.prop(self, "operation", expand = True)
+        
+        if self.polyType == "BMESH":
+            layout.prop(self, "bmeshQuad")
+            layout.prop(self, "bmeshNgon")
+        elif self.polyType in typesWithLoopFix:
+            layout.prop(self, "operationFix", expand = True)
+        else: 
+            layout.prop(self, "operation", expand = True)
+        
         if self.errorMessage != "":
             writeText(layout, self.errorMessage, icon = "ERROR", width = 20)
         
@@ -88,7 +114,7 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
         if not any(isLinked.values()): return ""
     
         type = self.polyType
-        op = self.operation
+        op = self.getActiveEnumOp()#self.operation
         self.errorMessage = ""
         
         if type == "VECTORS":
@@ -100,8 +126,8 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
                 yield "    for t in self.tesselateVecs(vertexLocations):"
             elif op == "NGON":
                 yield "    for t in self.tesselatePolyNgon(vertexLocations, range(lenV), False):"
-            elif op == "NGON_FIX":
-                yield "    for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
+#            elif op == "NGON_FIX":
+#                yield "    for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
             yield "    " * 2 + "triIndices.append(t)"
 
         elif type == "INDICES":
@@ -113,8 +139,8 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
             if op == "TRI": 
                 yield "    for t in self.tesselateVecs(vertexLocations):"
             elif op == "NGON":
-                yield "    for t in self.tesselatePolyNgon(vertexLocations, indices, False):"
-            elif op == "NGON_FIX":
+#                yield "    for t in self.tesselatePolyNgon(vertexLocations, indices, False):"
+#            elif op == "NGON_FIX":
                 yield "    for t in self.tesselatePolyNgon(vertexLocations, indices, True):"
             yield "    " * 2 + "triIndices.append(t)"
 
@@ -168,8 +194,8 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
                 yield "        for t in self.tesselateVecs(vertexLocations):"
             elif op == "NGON":
                 yield "        for t in self.tesselatePolyNgon(vertexLocations, range(lenV), False):"
-            elif op == "NGON_FIX":
-                yield "        for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
+#            elif op == "NGON_FIX":
+#                yield "        for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
             yield "    " * 3 + "newPoly = polygon.copy()"
             yield "    " * 3 + "newPoly.vertexLocations = [vertexLocations[i] for i in t]"
             yield "    " * 3 + "triPolyList.append(newPoly)"
@@ -188,8 +214,8 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
                 yield "    " * 3 + "for t in self.tesselateVecs(vecs):"
             elif op == "NGON":
                 yield "    " * 3 + "for t in self.tesselatePolyNgon(vecs, range(lenV), False):"
-            elif op == "NGON_FIX":
-                yield "    " * 3 + "for t in self.tesselatePolyNgon(vecs, range(lenV), True):"
+#            elif op == "NGON_FIX":
+#                yield "    " * 3 + "for t in self.tesselatePolyNgon(vecs, range(lenV), True):"
             if isLinked["triPolyList"]: 
                 yield "    " * 4 + "newPoly = polygon.copy()"
                 yield "    " * 4 + "newPoly.vertexLocations = [vecs[i] for i in t]"
@@ -197,7 +223,8 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
             if isLinked["ngonIndices"]: yield "    " * 4 + "ngonIndices.append(p)"
 
         elif type == "BMESH":
-            return "bm = bm"
+            yield "bmOut = self.bmeshTriangulate(bm, self.bmeshQuad, self.bmeshNgon)"
+            #"bm = bm"
         
 
     def getUsedModules(self):
@@ -205,7 +232,7 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
 
 
 
-
+    # funcitons, just testing
     def isValidPolyIndex(self, lenV, poly):
         return 0 <= min(poly) and max(poly) < lenV
 
@@ -218,3 +245,11 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
 
     def tesselatePolyNgon(self, vecs, poly, fix):
         return (tuple(poly[i] for i in t) for t in ngon_tessellate(vecs, poly, fix_loops=fix))
+
+    def bmeshTriangulate(self, bm, quad, ngon):
+        bmOut = bm
+        faces = bmOut.faces[:]
+        triangulate(bmOut, faces=faces, quad_method = quad, ngon_method = ngon)
+        return bmOut
+
+
