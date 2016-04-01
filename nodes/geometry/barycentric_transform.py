@@ -33,12 +33,12 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
         self.outputs.clear()
         
         if self.operationType == "POINT":
-            self.inputs.new("an_VectorSocket", "Point", "point")
+            self.inputs.new("an_VectorSocket", "Location", "point")
             self.inputs.new("an_VectorListSocket", "Source Triangle Points", "t1")
             self.inputs.new("an_VectorListSocket", "Target Triangle Points", "t2")
             self.outputs.new("an_VectorSocket", "Morphed Location", "location")
         if self.operationType == "LIST":
-            self.inputs.new("an_VectorListSocket", "Point List", "pointList")
+            self.inputs.new("an_VectorListSocket", "Location List", "pointList")
             self.inputs.new("an_VectorListSocket", "Source Triangle Points", "t1")
             self.inputs.new("an_VectorListSocket", "Target Triangle Points", "t2")
             self.outputs.new("an_VectorListSocket", "Morphed Locations", "locationList")
@@ -55,7 +55,7 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
         writeText(layout, 'Only the first 3 points in each tri list will be considered', width = 21)
   
     def getExecutionCode(self):
-        
+
         yield "self.errorMessage = self.barycentricValidTriInputs(t1, t2)"
         yield "if self.errorMessage == '': "
         if self.operationType == "POINT":
@@ -67,7 +67,6 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
 
 #        # separate validation and function
 #        yield "isValid, self.errorMessage = self.barycentricValidTriInputs(t1, t2)"
-
 #        if self.operationType == "POINT":
 #            yield "if isValid: location = self.barycentricTransform(point, t1, t2)"
 #            yield "else: location = point"
@@ -75,17 +74,8 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
 #            yield "if isValid: locationList = [self.barycentricTransform(p, t1, t2) for p in pointList]"
 #            yield "else: locationList = []"
 
-#        # sepatate functions item/list
-#        if self.operationType == "POINT":
-#            return "location, self.errorMessage = self.barycentricTransformVector(point, t1, t2)"
-#        else:
-#            return "locationList, self.errorMessage = self.barycentricTransformList(pointList, t1, t2)"
-
-
     def getUsedModules(self):
         return ["mathutils"]
-
-
 
     def barycentricValidTriInputs(self, sourceTri, targetTri):
         valid = False
@@ -98,60 +88,11 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
                     sourceTri[2]==sourceTri[0]) ): 
             errorMessage = 'Expected 3 Different vectors for Source'
         else:
-            valid = True
-            errorMessage = ''
+            errorMessage, valid = '', True
             
-        return errorMessage
+        return errorMessage#, valid
     
     def barycentricTransform(self, vector, sourceTri, targetTri):
         return mathutils.geometry.barycentric_transform(      vector, 
                             sourceTri[0], sourceTri[1], sourceTri[2], 
                             targetTri[0], targetTri[1], targetTri[2])
-
-
-#    def barycentricTransformVector(self, vector, sourceTri, targetTri):
-#        if len(sourceTri) < 3:   
-#            location = vector
-#            errorMessage = 'Expected 3 vectors for Source Triangle'
-#        elif len(targetTri) < 3: 
-#            location = vector
-#            errorMessage = 'Expected 3 vectors for Target Triangle'
-#        elif any((  sourceTri[0]==sourceTri[1], 
-#                    sourceTri[1]==sourceTri[2], 
-#                    sourceTri[2]==sourceTri[0]) ): 
-#            location = vector
-#            self.errorMessage = 'Expected 3 Different vectors for Source'
-#            
-#        else: 
-#            location = mathutils.geometry.barycentric_transform(  vector, 
-#                                sourceTri[0], sourceTri[1], sourceTri[2], 
-#                                targetTri[0], targetTri[1], targetTri[2])
-#            errorMessage = ''
-#        
-#        return location, errorMessage
-
-
-#    def barycentricTransformList(self, vectorList, sourceTri, targetTri):
-#        if len(sourceTri) < 3:   
-#            locations = []
-#            errorMessage = 'Expected 3 vectors for Source Triangle'
-#        elif len(targetTri) < 3: 
-#            locations = []
-#            errorMessage = 'Expected 3 vectors for Target Triangle'
-#        elif any((  sourceTri[0]==sourceTri[1], 
-#                    sourceTri[1]==sourceTri[2], 
-#                    sourceTri[2]==sourceTri[0]) ): 
-#            locations = []
-#            self.errorMessage = 'Expected 3 Different vectors for Source'
-#            
-#        else: 
-#            barycentric = mathutils.geometry.barycentric_transform(vector, 
-#                                sourceTri[0], sourceTri[1], sourceTri[2], 
-#                                targetTri[0], targetTri[1], targetTri[2])
-#            locations = [barycentric for vector in vectorList]
-#            errorMessage = ''
-#        
-#        return locations, errorMessage
-    
-
-
