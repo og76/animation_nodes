@@ -43,6 +43,10 @@ class IsBetweenNode(bpy.types.Node, AnimationNode):
         layout.prop(self, "compareType", text = "")
         layout.prop(self, "negate")
 
+    def drawAdvanced(self, layout):
+        self.invokeSocketTypeChooser(layout, "assingType",
+            text = "Change Type", icon = "TRIA_RIGHT")
+
     def drawLabel(self):
         neg = "not " if self.negate else ""
         label = self.compareType
