@@ -16,10 +16,13 @@ compare_types = [   "A <  value <  B",
                     "A >  value >= B"]
 compare_types_items = [(t, t, "") for t in compare_types]
 
+numericLabelTypes = ["Integer", "Float"]
+
 class IsBetweenNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_IsBetweenNode"
     bl_label = "Is Between"
-    
+    dynamicLabelType = "HIDDEN_ONLY"
+
     def assignedTypeChanged(self, context):
         self.inputIdName = toIdName(self.assignedType)
         self.generateSockets()
@@ -40,8 +43,20 @@ class IsBetweenNode(bpy.types.Node, AnimationNode):
         layout.prop(self, "compareType", text = "")
         layout.prop(self, "negate")
 
+    def drawLabel(self):
+        neg = "not " if self.negate else ""
+        label = self.compareType
+        if self.assignedType in numericLabelTypes:
+            if getattr(self.socketV, "isUnlinked", False):
+                label = label.replace("value", str(round(self.socketV.value, 2)))
+            else: label = label.replace("value", "V")
+            if getattr(self.socketA, "isUnlinked", False):
+                label = label.replace("A", str(round(self.socketA.value, 2)))
+            if getattr(self.socketB, "isUnlinked", False):
+                label = label.replace("B", str(round(self.socketB.value, 2)))
+        return neg + label
+
     def getExecutionCode(self):
-        
         type = self.compareType.lower()
         neg = "not " if self.negate else ""
         
@@ -71,3 +86,15 @@ class IsBetweenNode(bpy.types.Node, AnimationNode):
         self.inputs.new(self.inputIdName, "Value", "value")
         self.inputs.new(self.inputIdName, "A", "a")
         self.inputs.new(self.inputIdName, "B", "b")
+
+    @property
+    def socketV(self):
+        return self.inputs.get("Value")
+
+    @property
+    def socketA(self):
+        return self.inputs.get("A")
+
+    @property
+    def socketB(self):
+        return self.inputs.get("B")
