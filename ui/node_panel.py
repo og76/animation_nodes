@@ -8,13 +8,15 @@ def draw(self, context):
     if not getattr(node, "isAnimationNode", False): return
     layout = self.layout
     layout.separator()
+    drawNodeSettings(layout, node)
 
-    drawGenericNodeProperties(layout, node)
+def drawNodeSettings(layout, node):
     drawSocketLists(layout, node)
     drawSocketVisibilityOperators(layout, node)
 
     if debuggingIsEnabled():
         layout.separator()
+        drawGenericNodeProperties(layout, node)
         layout.label("Identifier: " + node.identifier)
 
 def drawGenericNodeProperties(layout, node):
@@ -47,11 +49,11 @@ def drawSocketLists(layout, node):
 
 def drawSocketVisibilityOperators(layout, node):
     col = layout.column(align = True)
-    col.label("Toogle Operation Visibility:")
+    col.label("Toggle Operation Visibility:")
     row = col.row(align = True)
-    node.invokeFunction(row, "toogleTextInputVisibility", text = "Name")
-    node.invokeFunction(row, "toogleMoveOperatorsVisibility", text = "Move")
-    node.invokeFunction(row, "toogleRemoveOperatorVisibility", text = "Remove")
+    node.invokeFunction(row, "toggleTextInputVisibility", text = "Name")
+    node.invokeFunction(row, "toggleMoveOperatorsVisibility", text = "Move")
+    node.invokeFunction(row, "toggleRemoveOperatorVisibility", text = "Remove")
     node.invokeFunction(row, "disableSocketEditingInNode", icon = "FULLSCREEN")
 
 

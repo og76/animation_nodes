@@ -7,11 +7,11 @@ class ObjectMatrixInputNode(bpy.types.Node, AnimationNode):
     bl_label = "Object Matrix Input"
 
     def create(self):
-        self.inputs.new("an_ObjectSocket", "Object", "object").defaultDrawType = "PROPERTY_ONLY"
-        self.outputs.new("an_MatrixSocket", "World", "world")
-        self.outputs.new("an_MatrixSocket", "Basis", "basis").hide = True
-        self.outputs.new("an_MatrixSocket", "Local", "local").hide = True
-        self.outputs.new("an_MatrixSocket", "Parent Inverse", "parentInverse").hide = True
+        self.newInput("Object", "Object", "object").defaultDrawType = "PROPERTY_ONLY"
+        self.newOutput("Matrix", "World", "world")
+        self.newOutput("Matrix", "Basis", "basis", hide = True)
+        self.newOutput("Matrix", "Local", "local", hide = True)
+        self.newOutput("Matrix", "Parent Inverse", "parentInverse", hide = True)
 
     def getExecutionCode(self):
 

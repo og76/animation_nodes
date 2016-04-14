@@ -16,11 +16,11 @@ class an_ObjectTransformsOutputNode(bpy.types.Node, AnimationNode):
     useScale = BoolVectorProperty(update = checkedPropertiesChanged)
 
     def create(self):
-        self.inputs.new("an_ObjectSocket", "Object", "object").defaultDrawType = "PROPERTY_ONLY"
-        self.inputs.new("an_VectorSocket", "Location", "location")
-        self.inputs.new("an_EulerSocket", "Rotation", "rotation")
-        self.inputs.new("an_VectorSocket", "Scale", "scale").value = (1, 1, 1)
-        self.outputs.new("an_ObjectSocket", "Object", "object")
+        self.newInput("Object", "Object", "object", defaultDrawType = "PROPERTY_ONLY")
+        self.newInput("Vector", "Location", "location")
+        self.newInput("Euler", "Rotation", "rotation")
+        self.newInput("Vector", "Scale", "scale", value = (1, 1, 1))
+        self.newOutput("Object", "Object", "object")
         self.updateSocketVisibility()
 
     def draw(self, layout):

@@ -9,11 +9,11 @@ class ObjectDataPathOutputNode(bpy.types.Node, AnimationNode):
     errorMessage = StringProperty()
 
     def create(self):
-        self.inputs.new("an_ObjectSocket", "Object", "object").defaultDrawType = "PROPERTY_ONLY"
-        self.inputs.new("an_StringSocket", "Path", "path")
-        self.inputs.new("an_IntegerSocket", "Array Index", "arrayIndex")
-        self.inputs.new("an_GenericSocket", "Value", "value")
-        self.outputs.new("an_ObjectSocket", "Object", "object")
+        self.newInput("Object", "Object", "object", defaultDrawType = "PROPERTY_ONLY")
+        self.newInput("String", "Path", "path")
+        self.newInput("Integer", "Array Index", "arrayIndex")
+        self.newInput("Generic", "Value", "value")
+        self.newOutput("Object", "Object", "object")
 
     def draw(self, layout):
         if self.errorMessage != "":

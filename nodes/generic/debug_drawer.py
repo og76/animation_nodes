@@ -24,34 +24,34 @@ class DebugDrawerNode(bpy.types.Node, AnimationNode):
     errorMessage = StringProperty()
 
     def create(self):
-        self.inputs.new("an_GenericSocket", "Data", "data")
-        self.inputs.new("an_BooleanSocket", "Condition", "condition").hide = True
+        self.newInput("Generic", "Data", "data")
+        self.newInput("Boolean", "Condition", "condition", hide = True)
 
     def draw(self, layout):
+        if self.errorMessage != "":
+            layout.label(self.errorMessage, icon = "ERROR")
+
+    def drawAdvanced(self, layout):
         layout.prop(self, "fontSize")
         if isList(self.dataType):
             row = layout.row(align = True)
             row.prop(self, "maxListStartElements", text = "Begin")
             row.prop(self, "maxListEndElements", text = "End")
             layout.prop(self, "oneElementPerLine")
-        if self.errorMessage != "":
-            layout.label(self.errorMessage, icon = "ERROR")
-
-    def drawAdvanced(self, layout):
         layout.prop(self, "maxRows")
 
 
     def edit(self):
         origin = self.inputs[0].dataOrigin
-        targetIdName = getattr(origin, "bl_idname", "an_GenericSocket")
-        if targetIdName != self.inputs[0].bl_idname:
-            self.updateInputSocket(targetIdName)
+        targetDataType = getattr(origin, "dataType", "Generic")
+        if targetDataType != self.inputs[0].dataType:
+            self.updateInputSocket(targetDataType)
 
     @keepNodeState
-    def updateInputSocket(self, targetIdName):
+    def updateInputSocket(self, dataType):
         self.inputs.clear()
-        self.inputs.new(targetIdName, "Data", "data")
-        self.inputs.new("an_BooleanSocket", "Condition", "condition")
+        self.newInput(dataType, "Data", "data")
+        self.newInput("Boolean", "Condition", "condition")
 
     def getExecutionCode(self):
         if "Condition" in self.inputs:
@@ -122,10 +122,12 @@ class DebugDrawerNode(bpy.types.Node, AnimationNode):
 
 
 def drawDebugTextBoxes():
-    nodes = getNodesByType("an_DebugDrawerNode")
-    nodesInCurrentTree = getattr(bpy.context.space_data.node_tree, "nodes", [])
-    for node in nodes:
-        if node.name in nodesInCurrentTree and not node.hide and node.errorMessage == "":
+    tree = bpy.context.space_data.node_tree
+    if tree is None: return
+    if tree.bl_idname != "an_AnimationNodeTree": return
+
+    for node in tree.nodes:
+        if node.bl_idname == "an_DebugDrawerNode" and not node.hide and node.errorMessage == "":
             drawDebugTextBox(node)
 
 def drawDebugTextBox(node):

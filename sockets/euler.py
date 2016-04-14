@@ -31,5 +31,24 @@ class EulerSocket(bpy.types.NodeSocket, AnimationNodeSocket):
     def getProperty(self):
         return self.value[:]
 
-    def getCopyExpression(self):
+    @classmethod
+    def getCopyExpression(cls):
         return "value.copy()"
+
+
+class EulerListSocket(bpy.types.NodeSocket, AnimationNodeSocket):
+    bl_idname = "an_EulerListSocket"
+    bl_label = "Euler List Socket"
+    dataType = "Euler List"
+    baseDataType = "Euler"
+    allowedInputTypes = ["Euler List"]
+    drawColor = (0.1, 0.0, 0.4, 0.5)
+    storable = True
+    comparable = False
+
+    def getValueCode(self):
+        return "[]"
+
+    @classmethod
+    def getCopyExpression(cls):
+        return "[element.copy() for element in value]"

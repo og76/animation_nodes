@@ -43,3 +43,21 @@ class SequenceSocket(bpy.types.NodeSocket, AnimationNodeSocket):
         sequence = sequenceEditor.active_strip
         if sequence:
             self.sequenceName = sequence.name
+
+
+class SequenceListSocket(bpy.types.NodeSocket, AnimationNodeSocket):
+    bl_idname = "an_SequenceListSocket"
+    bl_label = "Sequence List Socket"
+    dataType = "Sequence List"
+    baseDataType = "Sequence"
+    allowedInputTypes = ["Sequence List"]
+    drawColor = (0, 0.644, 0, 0.5)
+    storable = False
+    comparable = False
+
+    def getValueCode(self):
+        return "[]"
+
+    @classmethod
+    def getCopyExpression(cls):
+        return "value[:]"

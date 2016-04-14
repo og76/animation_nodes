@@ -20,7 +20,7 @@ class TransformPolygonNode(bpy.types.Node, AnimationNode):
 
     def create(self):
         self.generateSockets()
-        self.outputs.new("an_PolygonSocket", "Polygon", "polygon")
+        self.newOutput("Polygon", "Polygon", "polygon")
 
     def draw(self, layout):
         layout.prop(self, "pivotType", text = "Pivot")
@@ -28,11 +28,11 @@ class TransformPolygonNode(bpy.types.Node, AnimationNode):
     @keepNodeState
     def generateSockets(self):
         self.inputs.clear()
-        self.inputs.new("an_PolygonSocket", "Polygon", "polygon").dataIsModified = True
-        self.inputs.new("an_MatrixSocket", "Matrix", "matrix")
+        self.newInput("Polygon", "Polygon", "polygon").dataIsModified = True
+        self.newInput("Matrix", "Matrix", "matrix")
 
         if self.pivotType == "CUSTOM":
-            self.inputs.new("an_VectorSocket", "Pivot", "pivot")
+            self.newInput("Vector", "Pivot", "pivot")
 
     def getExecutionCode(self):
         matrixName = "matrix"

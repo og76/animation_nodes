@@ -29,5 +29,24 @@ class ColorSocket(bpy.types.NodeSocket, AnimationNodeSocket):
     def getProperty(self):
         return self.value
 
-    def getCopyExpression(self):
+    @classmethod
+    def getCopyExpression(cls):
         return "value[:]"
+
+
+class ColorListSocket(bpy.types.NodeSocket, AnimationNodeSocket):
+    bl_idname = "an_ColorListSocket"
+    bl_label = "Color List Socket"
+    dataType = "Color List"
+    baseDataType = "Color"
+    allowedInputTypes = ["Color List"]
+    drawColor = (0.8, 0.8, 0.2, 0.5)
+    storable = True
+    comparable = False
+
+    def getValueCode(self):
+        return "[]"
+
+    @classmethod
+    def getCopyExpression(cls):
+        return "[element[:] for element in value]"

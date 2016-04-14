@@ -11,16 +11,16 @@ class TextSequenceOutputNode(bpy.types.Node, AnimationNode):
     errorMessage = StringProperty()
 
     def create(self):
-        self.inputs.new("an_SequenceSocket", "Sequence", "sequence").defaultDrawType = "PROPERTY_ONLY"
-        self.inputs.new("an_StringSocket", "Text", "text")
-        self.inputs.new("an_IntegerSocket", "Size", "size").value = 200
-        self.inputs.new("an_BooleanSocket", "Shadow", "shadow").value = False
-        self.inputs.new("an_StringSocket", "X Align", "xAlign").value = "CENTER"
-        self.inputs.new("an_StringSocket", "Y Align", "yAlign").value = "BOTTOM"
-        self.inputs.new("an_FloatSocket", "X Location", "xLocation").value = 0.5
-        self.inputs.new("an_FloatSocket", "Y Location", "yLocation").value = 0.0
-        self.inputs.new("an_FloatSocket", "Wrap Width", "wrapWidth").value = 0.0
-        self.outputs.new("an_SequenceSocket", "Sequence", "sequence")
+        self.newInput("Sequence", "Sequence", "sequence", defaultDrawType = "PROPERTY_ONLY")
+        self.newInput("String", "Text", "text")
+        self.newInput("Integer", "Size", "size", value = 200)
+        self.newInput("Boolean", "Shadow", "shadow", value = False)
+        self.newInput("String", "X Align", "xAlign", value = "CENTER")
+        self.newInput("String", "Y Align", "yAlign", value = "BOTTOM")
+        self.newInput("Float", "X Location", "xLocation", value = 0.5)
+        self.newInput("Float", "Y Location", "yLocation", value = 0.0)
+        self.newInput("Float", "Wrap Width", "wrapWidth", value = 0.0)
+        self.newOutput("Sequence", "Sequence", "sequence")
 
         for socket in self.inputs[1:]:
             socket.useIsUsedProperty = True

@@ -8,24 +8,38 @@ from ... tree_info import keepNodeLinks
 compare_types = ["A = B", "A != B", "A < B", "A <= B", "A > B", "A >= B", "A is B"]
 compare_types_items = [(t, t, "") for t in compare_types]
 
+numericLabelTypes = ["Integer", "Float"]
+
 class CompareNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_CompareNode"
     bl_label = "Compare"
+    dynamicLabelType = "HIDDEN_ONLY"
 
     def assignedTypeChanged(self, context):
-        self.inputIdName = toIdName(self.assignedType)
         self.generateSockets()
 
     assignedType = StringProperty(update = assignedTypeChanged)
-    inputIdName = StringProperty()
     compareType = EnumProperty(name = "Compare Type", items = compare_types_items, update = executionCodeChanged)
 
     def create(self):
         self.assignedType = "Float"
-        self.outputs.new("an_BooleanSocket", "Result", "result")
+        self.newOutput("an_BooleanSocket", "Result", "result")
 
     def draw(self, layout):
         layout.prop(self, "compareType", text = "Type")
+
+    def drawLabel(self):
+        label = self.compareType
+        if self.assignedType in numericLabelTypes:
+            if getattr(self.socketA, "isUnlinked", False):
+                label = label.replace("A", str(round(self.socketA.value, 4)))
+            if getattr(self.socketB, "isUnlinked", False):
+                label = label.replace("B", str(round(self.socketB.value, 4)))
+        return label
+
+    def drawAdvanced(self, layout):
+        self.invokeSocketTypeChooser(layout, "assingType",
+            text = "Change Type", icon = "TRIA_RIGHT")
 
     def getExecutionCode(self):
         type = self.compareType
@@ -57,5 +71,13 @@ class CompareNode(bpy.types.Node, AnimationNode):
     @keepNodeLinks
     def generateSockets(self):
         self.inputs.clear()
-        self.inputs.new(self.inputIdName, "A", "a")
-        self.inputs.new(self.inputIdName, "B", "b")
+        self.newInput(self.assignedType, "A", "a")
+        self.newInput(self.assignedType, "B", "b")
+
+    @property
+    def socketA(self):
+        return self.inputs.get("A")
+
+    @property
+    def socketB(self):
+        return self.inputs.get("B")

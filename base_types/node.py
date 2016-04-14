@@ -4,12 +4,15 @@ import types
 import random
 from bpy.props import *
 from collections import defaultdict
-from .. ui.node_colors import colorNetworks
 from .. utils.handlers import eventHandler
+from .. ui.node_colors import colorNetworks
 from .. utils.nodes import getAnimationNodeTrees
-from .. utils.blender_ui import convertToRegionLocation, getDpiFactor
+from .. sockets.info import toIdName as toSocketIdName
+from .. utils.blender_ui import iterNodeCornerLocations
 from .. operators.dynamic_operators import getInvokeFunctionOperator
-from .. tree_info import getNetworkWithNode, getDirectlyLinkedSockets, getOriginNodes
+from .. tree_info import (getNetworkWithNode, getDirectlyLinkedSockets, getOriginNodes,
+                          getLinkedInputsDict, getLinkedOutputsDict, iterLinkedOutputSockets,
+                          iterUnlinkedInputSockets)
 
 class AnimationNode:
     bl_width_max = 5000
@@ -131,7 +134,25 @@ class AnimationNode:
         else:
             return self.bl_label
 
-    def invokeFunction(self, layout, functionName, text = "", icon = "NONE", description = "", emboss = True, confirm = False, data = None):
+    def newInput(self, type, name, identifier = None, **kwargs):
+        idName = toSocketIdName(type)
+        if identifier is None: identifier = name
+        socket = self.inputs.new(idName, name, identifier)
+        self._setSocketProperties(socket, kwargs)
+        return socket
+
+    def newOutput(self, type, name, identifier = None, **kwargs):
+        idName = toSocketIdName(type)
+        if identifier is None: identifier = name
+        socket = self.outputs.new(idName, name, identifier)
+        self._setSocketProperties(socket, kwargs)
+        return socket
+
+    def _setSocketProperties(self, socket, properties):
+        for key, value in properties.items():
+            setattr(socket, key, value)
+
+    def invokeFunction(self, layout, functionName, text = "", icon = "NONE", description = "", emboss = True, confirm = False, data = None, passEvent = False):
         idName = getInvokeFunctionOperator(description)
         props = layout.operator(idName, text = text, icon = icon, emboss = emboss)
         props.classType = "NODE"
@@ -141,6 +162,7 @@ class AnimationNode:
         props.invokeWithData = data is not None
         props.confirm = confirm
         props.data = str(data)
+        props.passEvent = passEvent
 
     def invokeSocketTypeChooser(self, layout, functionName, socketGroup = "ALL", text = "", icon = "NONE", description = "", emboss = True):
         data = functionName + "," + socketGroup
@@ -171,12 +193,23 @@ class AnimationNode:
             nodeIdentifier = self.identifier,
             callback = data)
 
+    def invokePopup(self, layout, functionName, text = "", icon = "NONE", description = "", emboss = True, width = 250):
+        data = functionName + "," + str(width)
+        self.invokeFunction(layout, "_openNodePopup", text = text, icon = icon, description = description, emboss = emboss, data = data)
+
+    def _openNodePopup(self, data):
+        functionName, width = data.split(",")
+        bpy.ops.an.node_popup("INVOKE_DEFAULT",
+            nodeIdentifier = self.identifier,
+            functionName = functionName,
+            width = int(width))
+
     def clearSockets(self):
         self.inputs.clear()
         self.outputs.clear()
 
     def removeSocket(self, socket):
-        index = socket.index
+        index = socket.getIndex()
         if socket.isOutput:
             if index < self.activeOutputIndex: self.activeOutputIndex -= 1
         else:
@@ -188,12 +221,10 @@ class AnimationNode:
 
 
     def getLinkedInputsDict(self):
-        linkedInputs = {socket.identifier : socket.isLinked for socket in self.inputs}
-        return linkedInputs
+        return getLinkedInputsDict(self)
 
     def getLinkedOutputsDict(self):
-        linkedOutputs = {socket.identifier : socket.isLinked for socket in self.outputs}
-        return linkedOutputs
+        return getLinkedOutputsDict(self)
 
 
     def getVisibleInputs(self):
@@ -207,16 +238,16 @@ class AnimationNode:
         for socket in self.sockets:
             socket.disableSocketEditingInNode()
 
-    def toogleTextInputVisibility(self):
-        self.toogleSocketDisplayProperty("textInput")
+    def toggleTextInputVisibility(self):
+        self.toggleSocketDisplayProperty("textInput")
 
-    def toogleMoveOperatorsVisibility(self):
-        self.toogleSocketDisplayProperty("moveOperators")
+    def toggleMoveOperatorsVisibility(self):
+        self.toggleSocketDisplayProperty("moveOperators")
 
-    def toogleRemoveOperatorVisibility(self):
-        self.toogleSocketDisplayProperty("removeOperator")
+    def toggleRemoveOperatorVisibility(self):
+        self.toggleSocketDisplayProperty("removeOperator")
 
-    def toogleSocketDisplayProperty(self, name):
+    def toggleSocketDisplayProperty(self, name):
         if len(self.sockets) == 0: return
         state = not getattr(self.sockets[0].display, name)
         for socket in self.sockets:
@@ -266,7 +297,7 @@ class AnimationNode:
 
     @property
     def linkedOutputs(self):
-        return [socket for socket in self.outputs if socket.isLinked]
+        return tuple(iterLinkedOutputSockets(self))
 
     @property
     def activeInputSocket(self):
@@ -284,7 +315,7 @@ class AnimationNode:
 
     @property
     def unlinkedInputs(self):
-        return [socket for socket in self.inputs if not socket.isLinked]
+        return tuple(iterUnlinkedInputSockets(self))
 
     @property
     def network(self):
@@ -302,64 +333,38 @@ class AnimationNode:
     def outputVariables(self):
         return {socket.identifier : socket.identifier for socket in self.outputs}
 
-    @property
-    def innerLinks(self):
-        names = defaultdict(list)
+    def iterInnerLinks(self):
+        names = {}
         for identifier, variable in self.inputVariables.items():
-            names[variable].append(identifier)
+            names[variable] = identifier
         for identifier, variable in self.outputVariables.items():
-            names[variable].append(identifier)
-
-        links = []
-        for name, identifiers in names.items():
-            if len(identifiers) == 2: links.append(identifiers)
-        return links
+            if variable in names:
+                yield (names[variable], identifier)
 
     def getTemplateCodeString(self):
         return toString(self.getTemplateCode())
 
-    def getExecutionCodeString(self):
-        return toString(self.getExecutionCode())
-
-    def getTaggedExecutionCodeLines(self):
-        """
-        tags:
-            # - self
-            % - input variables
-            $ - output variables
-        """
+    def getLocalExecutionCode(self):
         inputVariables = self.inputVariables
         outputVariables = self.outputVariables
 
         if hasattr(self, "execute"):
-            parameters = ["%{0}%".format(inputVariables[socket.identifier]) for socket in self.inputs]
-            parameterString = ", ".join(parameters)
-
-            executionString = "#self#.execute(" + parameterString + ")"
-
-            outputVariables = ["${}$".format(outputVariables[socket.identifier]) for socket in self.outputs]
-            outputString = ", ".join(outputVariables)
-
-            if outputString == "": return [executionString]
-            return [outputString + " = "+ executionString]
+            return self.getLocalExecutionCode_ExecuteFunction(inputVariables, outputVariables)
         else:
-            code = toString(self.getExecutionCode())
-            for variable in inputVariables.values():
-                code = tagVariableName(code, variable, "%")
-            for variable in outputVariables.values():
-                code = tagVariableName(code, variable, "$")
-            code = tagVariableName(code, "self", "#")
-            return code.split("\n")
+            return self.getLocalExecutionCode_GetExecutionCode(inputVariables, outputVariables)
 
-from functools import lru_cache
-@lru_cache(maxsize = 2048)
-def tagVariableName(code, name, tag):
-    """
-    Find all occurences of 'name' in 'code' and set 'tag' before and after it.
-    The occurence must not have a dot before it.
-    """
-    code = re.sub(r"([^\.\"\%']|^)\b({})\b".format(name), r"\1{0}\2{0}".format(tag), code)
-    return code
+    def getLocalExecutionCode_ExecuteFunction(self, inputVariables, outputVariables):
+        parameterString = ", ".join(inputVariables[socket.identifier] for socket in self.inputs)
+        executionString = "self.execute({})".format(parameterString)
+
+        outputString = ", ".join(outputVariables[socket.identifier] for socket in self.outputs)
+
+        if outputString == "": return executionString
+        else: return "{} = {}".format(outputString, executionString)
+
+    def getLocalExecutionCode_GetExecutionCode(self, inputVariables, outputVariables):
+        return toString(self.getExecutionCode())
+
 
 @eventHandler("SCENE_UPDATE_POST")
 def createMissingIdentifiers(scene = None):
@@ -407,16 +412,10 @@ def getViewLocation(node):
     return location
 
 def getRegionBottomLeft(node, region):
-    location = node.viewLocation
-    dimensions = node.dimensions
-    dpiFactor = getDpiFactor()
-    return convertToRegionLocation(region, location.x, location.y - dimensions.y / dpiFactor)
+    return next(iterNodeCornerLocations([node], region, horizontal = "LEFT"))
 
 def getRegionBottomRight(node, region):
-    location = node.viewLocation
-    dimensions = node.dimensions
-    dpiFactor = getDpiFactor()
-    return convertToRegionLocation(region, location.x + dimensions.x / dpiFactor, location.y - dimensions.y / dpiFactor)
+    return next(iterNodeCornerLocations([node], region, horizontal = "RIGHT"))
 
 def register():
     bpy.types.Node.toID = nodeToID

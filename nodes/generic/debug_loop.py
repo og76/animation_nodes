@@ -10,19 +10,19 @@ class DebugLoopNode(bpy.types.Node, AnimationNode):
     textBlockName = StringProperty(name = "Text")
 
     def create(self):
-        self.inputs.new("an_NodeControlSocket", "...", "control")
-        self.newInput()
+        self.newInput("Node Control", "...", "control")
+        self.newInputSocket()
 
     def edit(self):
         controlSocket = self.inputs[-1]
         directOrigin = controlSocket.directOrigin
         if directOrigin is None: return
-        socket = self.newInput()
+        socket = self.newInputSocket()
         socket.linkWith(directOrigin)
         controlSocket.removeLinks()
 
-    def newInput(self):
-        socket = self.inputs.new("an_GenericSocket", "Data", "data")
+    def newInputSocket(self):
+        socket = self.newInput("an_GenericSocket", "Data", "data")
         socket.removeable = True
         socket.moveable = True
         socket["dataWidth"] = 10

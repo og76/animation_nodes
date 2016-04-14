@@ -34,8 +34,8 @@ class ScriptNode(bpy.types.Node, AnimationNode, SubprogramBaseNode):
     def create(self):
         self.randomizeNetworkColor()
         self.subprogramName = "My Script"
-        self.inputs.new("an_NodeControlSocket", "New Input", "newInput")
-        self.outputs.new("an_NodeControlSocket", "New Output", "newOutput")
+        self.newInput("an_NodeControlSocket", "New Input", "newInput")
+        self.newOutput("an_NodeControlSocket", "New Output", "newOutput")
 
     def draw(self, layout):
         layout.separator()
@@ -78,9 +78,9 @@ class ScriptNode(bpy.types.Node, AnimationNode, SubprogramBaseNode):
 
     def drawControlSocket(self, layout, socket):
         if socket in list(self.inputs):
-            self.invokeSocketTypeChooser(layout, "newInput", text = "New Input", icon = "ZOOMIN")
+            self.invokeSocketTypeChooser(layout, "newInputSocket", text = "New Input", icon = "ZOOMIN")
         else:
-            self.invokeSocketTypeChooser(layout, "newOutput", text = "New Output", icon = "ZOOMIN")
+            self.invokeSocketTypeChooser(layout, "newOutputSocket", text = "New Output", icon = "ZOOMIN")
 
     def edit(self):
         removedLink = self.removeLinks()
@@ -88,12 +88,12 @@ class ScriptNode(bpy.types.Node, AnimationNode, SubprogramBaseNode):
             text = "Please use an 'Invoke Subprogram' node to execute the script node"
             showTextPopup(text = text, title = "Info", icon = "INFO")
 
-    def newInput(self, dataType):
-        socket = self.inputs.new(toIdName(dataType), dataType)
+    def newInputSocket(self, dataType):
+        socket = self.newInput(dataType, dataType)
         self.setupSocket(socket)
 
-    def newOutput(self, dataType):
-        socket = self.outputs.new(toIdName(dataType), dataType)
+    def newOutputSocket(self, dataType):
+        socket = self.newOutput(dataType, dataType)
         self.setupSocket(socket)
 
     def setupSocket(self, socket):

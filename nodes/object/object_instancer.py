@@ -60,7 +60,7 @@ class ObjectInstancerNode(bpy.types.Node, AnimationNode):
         items = objectTypeItems, update = resetInstancesEvent)
 
     copyObjectProperties = BoolProperty(name = "Copy Full Object", default = False,
-        description = "Enable this to copy modifiers/constrains/... from the source object.",
+        description = "Enable this to copy modifiers/constraints/... from the source object.",
         update = resetInstancesEvent)
 
     removeAnimationData = BoolProperty(name = "Remove Animation Data", default = True,
@@ -75,15 +75,15 @@ class ObjectInstancerNode(bpy.types.Node, AnimationNode):
 
     def create(self):
         self.updateInputSockets()
-        self.outputs.new("an_ObjectListSocket", "Objects", "objects")
+        self.newOutput("an_ObjectListSocket", "Objects", "objects")
 
     @keepNodeState
     def updateInputSockets(self):
         self.inputs.clear()
-        self.inputs.new("an_IntegerSocket", "Instances", "instancesAmount").minValue = 0
+        self.newInput("Integer", "Instances", "instancesAmount", minValue = 0)
         if self.copyFromSource:
-            self.inputs.new("an_ObjectSocket", "Source", "sourceObject").defaultDrawType = "PROPERTY_ONLY"
-        self.inputs.new("an_SceneListSocket", "Scenes", "scenes").hide = True
+            self.newInput("Object", "Source", "sourceObject", defaultDrawType = "PROPERTY_ONLY")
+        self.newInput("Scene List", "Scenes", "scenes", hide = True)
 
     def draw(self, layout):
         layout.prop(self, "copyFromSource")

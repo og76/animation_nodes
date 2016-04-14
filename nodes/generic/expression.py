@@ -1,7 +1,6 @@
 import re
 import bpy
 from bpy.props import *
-from ... sockets.info import toIdName
 from ... utils.code import isCodeValid
 from ... utils.layout import splitAlignment
 from ... events import executionCodeChanged
@@ -13,6 +12,7 @@ class ExpressionNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_ExpressionNode"
     bl_label = "Expression"
     bl_width_default = 200
+    dynamicLabelType = "HIDDEN_ONLY"
 
     def settingChanged(self, context = None):
         self.executionError = ""
@@ -35,14 +35,14 @@ class ExpressionNode(bpy.types.Node, AnimationNode):
     outputIsList = BoolProperty(name = "Output is List", default = False, update = outputTypeChanged)
 
     def create(self):
-        self.inputs.new("an_NodeControlSocket", "New Input")
-        self.outputs.new("an_GenericSocket", "Result", "result")
+        self.newInput("Node Control", "New Input")
+        self.newOutput("Generic", "Result", "result")
 
     def recreateOutputSocket(self):
-        idName = "an_GenericListSocket" if self.outputIsList else "an_GenericSocket"
-        if self.outputs[0].bl_idname == idName: return
+        dataType = "Generic List" if self.outputIsList else "Generic"
+        if self.outputs[0].dataType == dataType: return
         self.outputs.clear()
-        self.outputs.new(idName, "Result", "result")
+        self.newOutput(dataType, "Result", "result")
 
     def draw(self, layout):
         layout.prop(self, "expression", text = "")
@@ -57,6 +57,9 @@ class ExpressionNode(bpy.types.Node, AnimationNode):
         layout.prop(self, "debugMode")
         layout.prop(self, "outputIsList")
         layout.prop(self, "moduleNames")
+
+    def drawLabel(self):
+        return self.expression
 
     def drawControlSocket(self, layout, socket):
         left, right = splitAlignment(layout)
@@ -101,7 +104,7 @@ class ExpressionNode(bpy.types.Node, AnimationNode):
 
     def newInputSocket(self, dataType):
         name = self.getNewSocketName()
-        socket = self.inputs.new(toIdName(dataType), name, "input")
+        socket = self.newInput(dataType, name, "input")
         socket.dataIsModified = True
         socket.textProps.editable = True
         socket.textProps.variable = True

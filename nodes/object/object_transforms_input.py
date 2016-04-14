@@ -27,11 +27,11 @@ class ObjectTransformsInputNode(bpy.types.Node, AnimationNode):
         items = frameTypeItems, update = executionCodeChanged)
 
     def create(self):
-        self.inputs.new("an_ObjectSocket", "Object", "object").defaultDrawType = "PROPERTY_ONLY"
-        self.outputs.new("an_VectorSocket", "Location", "location")
-        self.outputs.new("an_EulerSocket", "Rotation", "rotation")
-        self.outputs.new("an_VectorSocket", "Scale", "scale")
-        self.outputs.new("an_QuaternionSocket", "Quaternion", "quaternion").hide = True
+        self.newInput("Object", "Object", "object", defaultDrawType = "PROPERTY_ONLY")
+        self.newOutput("Vector", "Location", "location")
+        self.newOutput("Euler", "Rotation", "rotation")
+        self.newOutput("Vector", "Scale", "scale")
+        self.newOutput("Quaternion", "Quaternion", "quaternion", hide = True)
 
     def updateFrameSocket(self):
         if self.useCurrentTransforms:
@@ -39,7 +39,7 @@ class ObjectTransformsInputNode(bpy.types.Node, AnimationNode):
                 self.inputs["Frame"].remove()
         else:
             if "Frame" not in self.inputs:
-                self.inputs.new("an_FloatSocket", "Frame", "frame")
+                self.newInput("an_FloatSocket", "Frame", "frame")
 
     def draw(self, layout):
         if not self.useCurrentTransforms:
@@ -50,6 +50,7 @@ class ObjectTransformsInputNode(bpy.types.Node, AnimationNode):
         col = layout.column()
         col.active = not self.useCurrentTransforms
         col.prop(self, "frameType")
+        self.invokeFunction(layout, "createAutoExecutionTrigger", text = "Create Execution Trigger")
 
     def getExecutionCode(self):
         isLinked = self.getLinkedOutputsDict()
@@ -77,3 +78,18 @@ class ObjectTransformsInputNode(bpy.types.Node, AnimationNode):
 
     def getUsedModules(self):
         return ["mathutils"]
+
+    def createAutoExecutionTrigger(self):
+        isLinked = self.getLinkedOutputsDict()
+        customTriggers = self.nodeTree.autoExecution.customTriggers
+
+        objectName = self.inputs["Object"].objectName
+
+        if isLinked["location"]:
+            customTriggers.new("MONITOR_PROPERTY", idType = "OBJECT", dataPath = "location", idObjectName = objectName)
+        if isLinked["rotation"]:
+            customTriggers.new("MONITOR_PROPERTY", idType = "OBJECT", dataPath = "rotation_euler", idObjectName = objectName)
+        if isLinked["scale"]:
+            customTriggers.new("MONITOR_PROPERTY", idType = "OBJECT", dataPath = "scale", idObjectName = objectName)
+        if isLinked["quaternion"]:
+            customTriggers.new("MONITOR_PROPERTY", idType = "OBJECT", dataPath = "rotation_quaternion", idObjectName = objectName)
