@@ -13,6 +13,7 @@ class FindCloseVerticesNode(bpy.types.Node, AnimationNode):
         self.newInput("Float", "Min Distance", "minDistance", value = 0.02)
         self.newInput("Float", "Max Distance", "maxDistance", value = 0.3)
         self.newOutput("Edge Indices List", "Edges", "edges")
+        self.newOutput("Float List", "Edges Lengths", "lengths")
 
     def execute(self, vertices, clusters, connections, minDistance, maxDistance):
         minDistance = max(0, minDistance)
@@ -23,7 +24,10 @@ class FindCloseVerticesNode(bpy.types.Node, AnimationNode):
         for i, vector in enumerate(vertices):
             kdTree.insert(vector, i)
         kdTree.balance()
+        
+        controlSet = set()
         edges = []
+        lengths = []
         for searchIndex in range(min(verticesAmount, clusters)):
             added = 0
             for (vector, foundIndex, distance) in kdTree.find_range(vertices[searchIndex], maxDistance):
@@ -33,7 +37,11 @@ class FindCloseVerticesNode(bpy.types.Node, AnimationNode):
                         edge = (searchIndex, foundIndex)
                     else:
                         edge = (foundIndex, searchIndex)
+                    if edge in controlSet: break
+                    
                     edges.append(edge)
+                    lengths.append(distance)
+                    controlSet.add(edge)
                     added += 1
 
-        return list(set(edges))
+        return edges, lengths #list(set(edges))
