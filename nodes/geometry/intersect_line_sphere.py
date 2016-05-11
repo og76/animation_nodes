@@ -7,20 +7,20 @@ class IntersectLineSphereNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_IntersectLineSphereNode"
     bl_label = "Intersect Line Sphere"
     
-    clip = BoolProperty(description = "Only consider intersections inside the line, otherwise line is infinite", 
-        default = False, update = propertyChanged)
+    clip = BoolProperty(default = False, update = propertyChanged,
+        description = "Only consider intersections inside the line, otherwise line is infinite")
         
     def create(self):
         self.width = 160
-        self.inputs.new("an_VectorSocket", "Line Start", "lineStart")
-        self.inputs.new("an_VectorSocket", "Line End", "lineEnd").value = (0, 0, 1)
-        self.inputs.new("an_VectorSocket", "Sphere Center", "center")
-        self.inputs.new("an_FloatSocket", "Sphere Radius", "radius").value = 1
+        self.newInput("Vector", "Line Start", "lineStart")
+        self.newInput("Vector", "Line End", "lineEnd").value = (0, 0, 1)
+        self.newInput("Vector", "Sphere Center", "center")
+        self.newInput("Vector", "Sphere Radius", "radius").value = 1
         
-        self.outputs.new("an_VectorSocket", "Intersection 1", "intersection1")
-        self.outputs.new("an_VectorSocket", "Intersection 2", "intersection2")
-        self.outputs.new("an_BooleanSocket", "Is Valid 1", "isValid1").hide = True
-        self.outputs.new("an_BooleanSocket", "Is Valid 2", "isValid2").hide = True
+        self.newOutput("Vector", "Intersection 1", "intersection1")
+        self.newOutput("Vector", "Intersection 2", "intersection2")
+        self.newOutput("Boolean", "Is Valid 1", "isValid1").hide = True
+        self.newOutput("Boolean", "Is Valid 2", "isValid2").hide = True
         
     def draw(self, layout):
         layout.prop(self, "clip")
@@ -39,23 +39,13 @@ class IntersectLineSphereNode(bpy.types.Node, AnimationNode):
         if intersection2 : yield "    intersection2 = center"
         if isValid1: yield "    isValid1 = False"
         if isValid2: yield "    isValid2 = False"
+        
         yield "else:"
         yield "    int1, int2 = mathutils.geometry.intersect_line_sphere(lineStart, lineEnd, center, radius, self.clip)"
-        yield "    if int1 != None:"
-        if intersection1 : yield "        intersection1 = int1"
-        if isValid1: yield "        isValid1 = True"
-        yield "    else:"
-        if intersection1 : yield "        intersection1 = center"
-        if isValid1: yield "        isValid1 = False"
-        yield "    if int2 != None:"
-        if intersection2 : yield "        intersection2 = int2"
-        if isValid2: yield "        isValid2 = True"
-        yield "    else:"
-        if intersection2 : yield "        intersection2 = center"
-        if isValid2: yield "        isValid2 = False"
+        if intersection1 or isValid1:
+            yield "    intersection1, isValid1 = (int1, True) if int1 != None else (center, False)"
+        if intersection2 or isValid2:
+            yield "    intersection2, isValid2 = (int2, True) if int2 != None else (center, False)"
 
-#        yield "    intersection1, isValid1 = (int1, True) if int1 != None else (center, False)"
-#        yield "    intersection2, isValid2 = (int2, True) if int2 != None else (center, False)"
-        
     def getUsedModules(self):
         return ["mathutils"]
