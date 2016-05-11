@@ -4,17 +4,18 @@ from ... base_types.node import AnimationNode
 class IntersectLineLineNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_IntersectLineLineNode"
     bl_label = "Intersect Line Line"
+    bl_width_default = 160
+    searchTags = ["Closest Points on 2 Lines"]
         
     def create(self):
-        self.width = 160
-        self.inputs.new("an_VectorSocket", "Line 1 Start", "line1Start").value = [-2, 0, 0]
-        self.inputs.new("an_VectorSocket", "Line 1 End", "line1End").value = [2, 0, 0]
-        self.inputs.new("an_VectorSocket", "Line 2 Start", "line2Start").value = [1, -1, 0]
-        self.inputs.new("an_VectorSocket", "Line 2 End", "line2End").value = [1, 1, 0]
+        self.newInput("Vector", "Line 1 Start", "line1Start").value = [-2, 0, 0]
+        self.newInput("Vector", "Line 1 End", "line1End").value = [2, 0, 0]
+        self.newInput("Vector", "Line 2 Start", "line2Start").value = [1, -1, 0]
+        self.newInput("Vector", "Line 2 End", "line2End").value = [1, 1, 0]
         
-        self.outputs.new("an_VectorSocket", "Intersection (Closest) 1", "int1")
-        self.outputs.new("an_VectorSocket", "Intersection (Closest) 2", "int2")
-        self.outputs.new("an_BooleanSocket", "Is Valid", "isValid")
+        self.newOutput("Vector", "Intersection (Closest) 1", "int1")
+        self.newOutput("Vector", "Intersection (Closest) 2", "int2")
+        self.newOutput("Boolean", "Is Valid", "isValid")
         
     def getExecutionCode(self):
         isLinked = self.getLinkedOutputsDict()
