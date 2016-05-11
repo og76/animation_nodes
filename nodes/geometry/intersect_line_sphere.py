@@ -6,12 +6,12 @@ from ... base_types.node import AnimationNode
 class IntersectLineSphereNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_IntersectLineSphereNode"
     bl_label = "Intersect Line Sphere"
+    bl_width_default = 160
     
     clip = BoolProperty(default = False, update = propertyChanged,
         description = "Only consider intersections inside the line, otherwise line is infinite")
         
     def create(self):
-        self.width = 160
         self.newInput("Vector", "Line Start", "lineStart")
         self.newInput("Vector", "Line End", "lineEnd").value = (0, 0, 1)
         self.newInput("Vector", "Sphere Center", "center")

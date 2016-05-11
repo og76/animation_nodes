@@ -30,7 +30,9 @@ operationItemsFix = operationItems + [
 class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_PolygonsTessellateNode"
     bl_label = "Triangulate Polygons"
-    searchLabels = ["Tesselate Point List"]
+    bl_width_default = 180
+    
+    searchLabels = ["Tesselate Point List", "Tesselate Polygons"]
 
     def polyTypeChanged(self, context):
         self.recreateSockets()
@@ -57,7 +59,6 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
         else: return  self.operation
 
     def create(self):
-        self.width = 160
         self.recreateSockets()
         self.polyType = "INDICES_LIST"
 
@@ -68,31 +69,37 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
         type = self.polyType
 
         if type == "VECTORS":
-            self.inputs.new("an_VectorListSocket", "Ordered Vectors", "vertexLocations")
-            self.outputs.new("an_PolygonIndicesListSocket", "Triangulated Polygon Indices", "triIndices")
+            self.newInput("Vector List", "Ordered Vectors", "vertexLocations")
+            self.newOutput("Polygon Indices List", "Triangulated Polygon Indices", "triIndices")
+        
         elif type == "INDICES":
-            self.inputs.new("an_VectorListSocket", "Vertex Locations", "vertexLocations")
-            self.inputs.new("an_IntegerListSocket", "Polygon Index", "indices")
-            self.outputs.new("an_PolygonIndicesListSocket", "Triangulated Polygon Indices", "triIndices")
+            self.newInput("Vector List", "Vertex Locations", "vertexLocations")
+            self.newInput("Integer List", "Polygon Index", "indices")
+            self.newOutput("Polygon Indices List", "Triangulated Polygon Indices", "triIndices")
+        
         elif type == "INDICES_LIST":
-            self.inputs.new("an_VectorListSocket", "Vertex Locations", "vertexLocations")
-            self.inputs.new("an_PolygonIndicesListSocket", "Polygon Indices", "polygonIndices")
-            self.outputs.new("an_PolygonIndicesListSocket", "Triangulated Polygon Indices", "triIndices")
-            self.outputs.new("an_IntegerListSocket", "Matching Ngon Indices", "ngonIndices")
+            self.newInput("Vector List", "Vertex Locations", "vertexLocations")
+            self.newInput("Polygon Indices List", "Polygon Indices", "polygonIndices")
+            self.newOutput("Polygon Indices List", "Triangulated Polygon Indices", "triIndices")
+            self.newOutput("Integer List", "Matching Ngon Indices", "ngonIndices")
+        
         elif type == "MESH":
-            self.inputs.new("an_MeshDataSocket", "Mesh Data", "meshData")
-            self.outputs.new("an_MeshDataSocket", "Mesh Data", "triMeshData")
-            self.outputs.new("an_IntegerListSocket", "Matching Ngon Indices", "ngonIndices")
+            self.newInput("Mesh Data", "Mesh Data", "meshData")
+            self.newOutput("Mesh Data", "Mesh Data", "triMeshData")
+            self.newOutput("Integer List", "Matching Ngon Indices", "ngonIndices")
+        
         elif type == "POLY":
-            self.inputs.new("an_PolygonSocket", "Polygon", "polygon")
-            self.outputs.new("an_PolygonListSocket", "Triangulated Polygon", "triPolyList")
+            self.newInput("Polygon", "Polygon", "polygon")
+            self.newOutput("Polygon List", "Triangulated Polygon", "triPolyList")
+        
         elif type == "POLY_LIST":
-            self.inputs.new("an_PolygonListSocket", "Polygon List", "polygonList")
-            self.outputs.new("an_PolygonListSocket", "Triangulated Polygons", "triPolyList")
-            self.outputs.new("an_IntegerListSocket", "Matching Ngon Indices", "ngonIndices")
+            self.newInput("Polygon List", "Polygon List", "polygonList")
+            self.newOutput("Polygon List", "Triangulated Polygons", "triPolyList")
+            self.newOutput("Integer List", "Matching Ngon Indices", "ngonIndices")
+        
         elif type == "BMESH":
-            self.inputs.new("an_BMeshSocket", "BMesh", "bm")
-            self.outputs.new("an_BMeshSocket", "BMesh", "bmOut")
+            self.newInput("BMesh", "BMesh", "bm")
+            self.newOutput("BMesh", "BMesh", "bmOut")
 
 
     def draw(self, layout):
@@ -114,7 +121,7 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
         if not any(isLinked.values()): return ""
     
         type = self.polyType
-        op = self.getActiveEnumOp()#self.operation
+        op = self.getActiveEnumOp()
         self.errorMessage = ""
         
         if type == "VECTORS":
@@ -123,32 +130,28 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
             yield "lenV = len(vertexLocations)"
             yield "if lenV > 2:"
             if op == "TRI": 
-                yield "    for t in self.tesselateVecs(vertexLocations):"
+                yield "    triIndices = list(self.tesselateVecs(vertexLocations))"
             elif op == "NGON":
-                yield "    for t in self.tesselatePolyNgon(vertexLocations, range(lenV), False):"
-#            elif op == "NGON_FIX":
-#                yield "    for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
-            yield "    " * 2 + "triIndices.append(t)"
+                yield "    triIndices = list(self.tesselatePolyNgon(vertexLocations, range(lenV), False))"
 
         elif type == "INDICES":
             yield "triIndices = []"
 
             yield "lenV = len(vertexLocations)"
-            yield "if lenV > 3:"
-            yield "    vertexLocations = [vertexLocations[i] for i in indices]"
+            yield "if lenV > 2 and indices:"
+            yield "    if self.isValidPolyIndex(lenV, indices):"
             if op == "TRI": 
-                yield "    for t in self.tesselateVecs(vertexLocations):"
+                yield "        vertexLocations = [vertexLocations[i] for i in indices]"
+                yield "        triIndices = [tuple(indices[i] for i in t) for t in self.tesselateVecs(vertexLocations)]"
             elif op == "NGON":
-#                yield "    for t in self.tesselatePolyNgon(vertexLocations, indices, False):"
-#            elif op == "NGON_FIX":
-                yield "    for t in self.tesselatePolyNgon(vertexLocations, indices, True):"
-            yield "    " * 2 + "triIndices.append(t)"
+                yield "        triIndices = list(self.tesselatePolyNgon(vertexLocations, indices, False))"
+
 
         elif type == "INDICES_LIST":
             yield "triIndices, ngonIndices = [], []"
 
             yield "lenV = len(vertexLocations)"
-            yield "if lenV > 3 and polygonIndices:"
+            yield "if lenV > 2 and polygonIndices:"
             yield "    for p, poly in enumerate(polygonIndices):"
             yield "        if self.isValidPolyIndex(lenV, poly):"
             if op == "TRI": 
@@ -194,8 +197,6 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
                 yield "        for t in self.tesselateVecs(vertexLocations):"
             elif op == "NGON":
                 yield "        for t in self.tesselatePolyNgon(vertexLocations, range(lenV), False):"
-#            elif op == "NGON_FIX":
-#                yield "        for t in self.tesselatePolyNgon(vertexLocations, range(lenV), True):"
             yield "    " * 3 + "newPoly = polygon.copy()"
             yield "    " * 3 + "newPoly.vertexLocations = [vertexLocations[i] for i in t]"
             yield "    " * 3 + "triPolyList.append(newPoly)"
@@ -214,8 +215,6 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
                 yield "    " * 3 + "for t in self.tesselateVecs(vecs):"
             elif op == "NGON":
                 yield "    " * 3 + "for t in self.tesselatePolyNgon(vecs, range(lenV), False):"
-#            elif op == "NGON_FIX":
-#                yield "    " * 3 + "for t in self.tesselatePolyNgon(vecs, range(lenV), True):"
             if isLinked["triPolyList"]: 
                 yield "    " * 4 + "newPoly = polygon.copy()"
                 yield "    " * 4 + "newPoly.vertexLocations = [vecs[i] for i in t]"
@@ -224,24 +223,20 @@ class PolygonsTessellateNode(bpy.types.Node, AnimationNode):
 
         elif type == "BMESH":
             yield "bmOut = self.bmeshTriangulate(bm, self.bmeshQuad, self.bmeshNgon)"
-            #"bm = bm"
         
 
     def getUsedModules(self):
         return ["mathutils"]
 
 
-
-    # funcitons, just testing
     def isValidPolyIndex(self, lenV, poly):
         return 0 <= min(poly) and max(poly) < lenV
 
     def tesselateVecs(self, vecs):
-        return (tuple(t) for t in tessellate_polygon( [[v for v in vecs]] ) )
+        return (tuple(reversed(t)) for t in tessellate_polygon( [[v for v in vecs]] ) )
 
     def tesselatePoly(self, vecs, poly):
         return (tuple(poly[i] for i in t) for t in tessellate_polygon( [[vecs[v] for v in poly]] ) )
-
 
     def tesselatePolyNgon(self, vecs, poly, fix):
         return (tuple(poly[i] for i in t) for t in ngon_tessellate(vecs, poly, fix_loops=fix))
