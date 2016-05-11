@@ -33,15 +33,15 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
         self.outputs.clear()
         
         if self.operationType == "POINT":
-            self.inputs.new("an_VectorSocket", "Location", "point")
-            self.inputs.new("an_VectorListSocket", "Source Triangle Points", "t1")
-            self.inputs.new("an_VectorListSocket", "Target Triangle Points", "t2")
-            self.outputs.new("an_VectorSocket", "Morphed Location", "location")
+            self.newInput("Vector", "Location", "point")
+            self.newInput("Vector List", "Source Triangle Points", "t1")
+            self.newInput("Vector List", "Target Triangle Points", "t2")
+            self.newOutput("Vector", "Morphed Location", "location")
         if self.operationType == "LIST":
-            self.inputs.new("an_VectorListSocket", "Location List", "pointList")
-            self.inputs.new("an_VectorListSocket", "Source Triangle Points", "t1")
-            self.inputs.new("an_VectorListSocket", "Target Triangle Points", "t2")
-            self.outputs.new("an_VectorListSocket", "Morphed Locations", "locationList")
+            self.newInput("Vector List", "Location List", "pointList")
+            self.newInput("Vector List", "Source Triangle Points", "t1")
+            self.newInput("Vector List", "Target Triangle Points", "t2")
+            self.newOutput("Vector List", "Morphed Locations", "locationList")
 
     def draw(self, layout):
         layout.prop(self, "operationType", text = "")
@@ -65,32 +65,21 @@ class BarycentricTransformNode(bpy.types.Node, AnimationNode):
             yield "    locationList = [self.barycentricTransform(p, t1, t2) for p in pointList]"
             yield "else: locationList = []"
 
-#        # separate validation and function
-#        yield "isValid, self.errorMessage = self.barycentricValidTriInputs(t1, t2)"
-#        if self.operationType == "POINT":
-#            yield "if isValid: location = self.barycentricTransform(point, t1, t2)"
-#            yield "else: location = point"
-#        elif self.operationType == "LIST":
-#            yield "if isValid: locationList = [self.barycentricTransform(p, t1, t2) for p in pointList]"
-#            yield "else: locationList = []"
 
     def getUsedModules(self):
         return ["mathutils"]
 
     def barycentricValidTriInputs(self, sourceTri, targetTri):
-        valid = False
         if len(sourceTri) < 3:   
-            errorMessage = 'Expected 3 vectors for Source Triangle'
-        elif len(targetTri) < 3: 
-            errorMessage = 'Expected 3 vectors for Target Triangle'
-        elif any((  sourceTri[0]==sourceTri[1], 
-                    sourceTri[1]==sourceTri[2], 
-                    sourceTri[2]==sourceTri[0]) ): 
-            errorMessage = 'Expected 3 Different vectors for Source'
-        else:
-            errorMessage, valid = '', True
-            
-        return errorMessage#, valid
+            return 'Expected 3 vectors for Source Triangle'
+        if len(targetTri) < 3: 
+            return 'Expected 3 vectors for Target Triangle'
+        if any((sourceTri[0]==sourceTri[1], 
+                sourceTri[1]==sourceTri[2], 
+                sourceTri[2]==sourceTri[0]) ): 
+            return 'Expected 3 Different vectors for Source'
+        return ''
+
     
     def barycentricTransform(self, vector, sourceTri, targetTri):
         return mathutils.geometry.barycentric_transform(      vector, 
