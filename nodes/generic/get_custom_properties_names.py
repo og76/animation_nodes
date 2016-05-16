@@ -60,7 +60,8 @@ class GetCustomPropertiesNamesNode(bpy.types.Node, AnimationNode):
         
         if path == "OBJECT_DATA": 
             yield "if object is None or object.data is None: names = []"
-        else: yield "if {} is None: names = []".format(locationCode[path])
+        else: 
+            yield "if {} is None: names = []".format(locationCode[path])
         
         yield "else: names = self.getOnlyCustomKeys({}, self.includeAnIDKeys)".format(locationCode[path])
 #        yield "else: names = [item for item in {}.keys()]".format(locationCode[path])

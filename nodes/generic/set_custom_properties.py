@@ -59,23 +59,37 @@ class SetCustomPropertiesNamesNode(bpy.types.Node, AnimationNode):
         self.newInput("String", "Property", "property")
         self.newInput("Generic", "Value", "value")
         self.newInput("Boolean", "On/Off", "on").value = False
-        self.newInput("Boolean", "Add", "add")
+        self.newInput("Boolean", "Add (off = Remove)", "add")
 
     def getExecutionCode(self):
         path = self.path
+        location = locationCode[path]
         
-        input = ["object is not None", "object.data is not None"] if path == "OBJECT_DATA" else ["{} is not None".format(locationCode[path])]
-        conditions = [  "on", "property is not ''"] + input
-        yield "if all([" + ", ".join(conditions) + "]):"
-        
-#        yield "if on:"
-#        
-        yield "    if add:"
-        yield "        if value is not None:" 
-        yield "            if self.isValidProperty({}, property, self.includeAnIDKeys): {}[property] = value".format(locationCode[path], locationCode[path])
+        if path == "OBJECT_DATA":
+            testPath = "object"
+            testData = True
+        else:
+            testPath = location
+            testData = False
+
+        yield "if self.validConditions(on, property, value, {}, {}, self.includeAnIDKeys):".format(testPath, testData)
+        yield "    if add: {}[property] = value".format(location)
         yield "    else: "
-        yield "        if property in {}:".format(locationCode[path])
-        yield "            if self.isValidProperty({}, property, self.includeAnIDKeys): del {}[property]".format(locationCode[path], locationCode[path])
+        yield "        if property in {}: del {}[property]".format(location, location)
+
+
+    def validConditions(self, on, propName, propValue, testPath, testData, includeAnIDKeys):
+        if not on: return False
+        if propName is '': return False
+        if propValue is None: return False
+
+        if testPath is None: return False
+        if testData:
+            if testPath.data is None: return False
+        
+        path = testPath.data if testData else testPath
+        if not self.isValidProperty(path, propName, includeAnIDKeys): return False
+        return True
 
     def isValidProperty(self, dataPath, property, includeAnIDKeys = False):
         
